@@ -11,12 +11,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/AdiPat/rlm.git"
+    "url": "https://github.com/code-rabi/rllm.git"
   },
   "bugs": {
-    "url": "https://github.com/AdiPat/rlm/issues"
+    "url": "https://github.com/code-rabi/rllm/issues"
   },
-  "homepage": "https://github.com/AdiPat/rlm#readme",
+  "homepage": "https://github.com/code-rabi/rllm#readme",
   "exports": {
     ".": {
       "import": {

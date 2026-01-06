@@ -306,8 +306,9 @@ export class RLLM {
  */
 export function createRLLM(options: {
   model?: string;
-  provider?: "openai" | "anthropic" | "openrouter";
+  provider?: "openai" | "anthropic" | "openrouter" | "custom";
   apiKey?: string;
+  baseUrl?: string;
   verbose?: boolean;
 }): RLLM {
   return new RLLM({
@@ -315,6 +316,7 @@ export function createRLLM(options: {
       provider: options.provider ?? "openai",
       model: options.model ?? "gpt-4o-mini",
       apiKey: options.apiKey,
+      baseUrl: options.baseUrl,
     },
     verbose: options.verbose,
   });

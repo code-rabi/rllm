@@ -23,7 +23,7 @@ export type InferContextType<S> = S extends ZodType<infer T> ? T : string;
 // LLM Client Types
 // ============================================================================
 
-export type LLMProvider = "openai" | "anthropic" | "openrouter";
+export type LLMProvider = "openai" | "anthropic" | "openrouter" | "custom";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";

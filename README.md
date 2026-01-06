@@ -100,11 +100,28 @@ Create an RLLM instance with sensible defaults.
 ```typescript
 const rlm = createRLLM({
   model: 'gpt-4o-mini',      // Model name
-  provider: 'openai',         // 'openai' | 'anthropic' | 'openrouter'
+  provider: 'openai',         // 'openai' | 'anthropic' | 'openrouter' | 'custom'
   apiKey: process.env.KEY,    // Optional, uses env vars by default
+  baseUrl: undefined,         // Optional, required for 'custom' provider
   verbose: true,              // Enable logging
 });
 ```
+
+### Custom Provider (OpenAI-Compatible APIs)
+
+Use the `custom` provider to connect to any OpenAI-compatible API (e.g., vLLM, Ollama, LM Studio, Azure OpenAI):
+
+```typescript
+const rlm = createRLLM({
+  provider: 'custom',
+  model: 'llama-3.1-8b',
+  baseUrl: 'http://localhost:8000/v1',  // Required for custom provider
+  apiKey: 'your-api-key',               // Optional, depends on your API
+  verbose: true,
+});
+```
+
+**Note:** When using `provider: 'custom'`, the `baseUrl` parameter is **required**. An error will be thrown if it's not provided.
 
 ### `RLLM` Methods
 

@@ -42,6 +42,11 @@ export class LLMClient {
     this.model = options.model;
     this.provider = options.provider;
 
+    // Validate: custom provider requires baseUrl
+    if (options.provider === "custom" && !options.baseUrl) {
+      throw new Error("Custom provider requires a baseUrl to be specified");
+    }
+
     const apiKey = options.apiKey ?? this.getDefaultApiKey(options.provider);
     const baseUrl = options.baseUrl ?? this.getDefaultBaseUrl(options.provider);
 
@@ -56,6 +61,8 @@ export class LLMClient {
         return process.env["ANTHROPIC_API_KEY"];
       case "openrouter":
         return process.env["OPENROUTER_API_KEY"];
+      case "custom":
+        return undefined; // Must be provided explicitly
     }
   }
 
@@ -67,6 +74,8 @@ export class LLMClient {
         return "https://api.anthropic.com/v1";
       case "openrouter":
         return "https://openrouter.ai/api/v1";
+      case "custom":
+        return undefined; // Must be provided explicitly (validated in constructor)
     }
   }
 

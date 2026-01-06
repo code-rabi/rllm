@@ -168,10 +168,10 @@ TypeScript:   LLM → V8 isolate (same process) → direct function calls
 
 
 Benefits:
-- ✅ **No TCP/network** - Direct function calls via bindings
-- ✅ **Fast startup** - Isolates spin up in milliseconds
-- ✅ **Secure** - V8's built-in memory isolation
-- ✅ **Simple** - No containers, no socket servers
+- **No TCP/network** - Direct function calls via bindings
+- **Fast startup** - Isolates spin up in milliseconds
+- **Secure** - V8's built-in memory isolation
+- **Simple** - No containers, no socket servers
 
 ## Development
 

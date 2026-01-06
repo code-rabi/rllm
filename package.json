@@ -8,9 +8,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "lint": "eslint src --ext .ts",
-    "test": "vitest",
-    "example": "tsx examples/quickstart.ts"
+    "lint": "oxlint src",
+    "test": "vitest run",
+    "example": "tsx examples/quickstart.ts",
+    "example:schema": "tsx examples/schema-context.ts"
   },
   "keywords": [
     "llm",
@@ -24,22 +25,31 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "openai": "^4.76.0",
     "dotenv": "^16.4.5",
+    "openai": "^4.76.0",
     "uuid": "^11.0.3"
+  },
+  "peerDependencies": {
+    "zod": "^3.20.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/uuid": "^10.0.0",
-    "typescript": "^5.7.2",
-    "tsx": "^4.19.2",
-    "vitest": "^2.1.8",
-    "eslint": "^9.17.0",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
-    "@typescript-eslint/parser": "^8.18.1"
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^9.17.0",
+    "oxlint": "^1.37.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "zod": "^3.25.76"
   },
   "engines": {
     "node": ">=18.0.0"
   }
 }
-

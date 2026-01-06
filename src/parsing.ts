@@ -58,8 +58,11 @@ export function formatExecutionResult(result: SandboxResult): string {
     parts.push(result.stdout);
   }
 
-  if (result.stderr) {
-    parts.push(result.stderr);
+  // Show errors prominently so the LLM can fix them
+  if (result.error || result.stderr) {
+    if (result.stderr) {
+      parts.push(result.stderr);
+    }
   }
 
   // Show key variables (excluding internal ones)
@@ -72,6 +75,11 @@ export function formatExecutionResult(result: SandboxResult): string {
 
   if (importantVars.length > 0) {
     parts.push(`REPL variables: [${importantVars.join(", ")}]`);
+  }
+
+  // If there was an error, add a reminder that the LLM should fix it
+  if (result.error) {
+    parts.push(`\n⚠️ The code above had an error. Please analyze the error message and write corrected code.`);
   }
 
   return parts.length > 0 ? parts.join("\n\n") : "No output";

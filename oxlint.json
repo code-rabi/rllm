@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "rules": {
+    "no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "no-unused-imports": "error"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "rlm-python",
+    "benchmarks",
+    "*.test.ts"
+  ]
+}
+

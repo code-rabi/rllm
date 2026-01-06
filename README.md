@@ -24,14 +24,50 @@ const rlm = createRLM({
   verbose: true,
 });
 
-// Full RLM completion - LLM can write arbitrary JS code
-const result = await rlm.completion(hugeDocument, {
-  rootPrompt: "What are the key findings in this research?",
-});
+// Full RLM completion - prompt first, context in options
+const result = await rlm.completion(
+  "What are the key findings in this research?",
+  { context: hugeDocument }
+);
 
 console.log(result.answer);
 console.log(`Iterations: ${result.iterations}, Sub-LLM calls: ${result.usage.subCalls}`);
 ```
+
+### Structured Context with Zod Schema
+
+For structured data, you can provide a Zod schema. The LLM will receive type information, enabling it to write better code:
+
+```typescript
+import { z } from 'zod';
+import { createRLM } from 'rlm-ts';
+
+// Define schema for your data
+const DataSchema = z.object({
+  users: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    role: z.enum(['admin', 'user', 'guest']),
+    activity: z.array(z.object({
+      date: z.string(),
+      action: z.string(),
+    })),
+  })),
+  settings: z.record(z.string(), z.boolean()),
+});
+
+const rlm = createRLM({ model: 'gpt-4o-mini' });
+
+const result = await rlm.completion(
+  "How many admin users are there? What actions did they perform?",
+  {
+    context: myData,
+    contextSchema: DataSchema,  // LLM sees the type structure!
+  }
+);
+```
+
+The LLM will know it can access `context.users`, `context.settings`, etc. with full type awareness.
 
 The LLM will write code like:
 ```javascript
@@ -69,9 +105,16 @@ const rlm = createRLM({
 
 | Method | Description |
 |--------|-------------|
-| `rlm.completion(context, options)` | Full RLM completion with code execution |
+| `rlm.completion(prompt, options)` | Full RLM completion with code execution |
 | `rlm.chat(messages)` | Direct LLM chat |
 | `rlm.getClient()` | Get underlying LLM client |
+
+### `CompletionOptions`
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `context` | `string \| T` | The context data available to LLM-generated code |
+| `contextSchema` | `ZodType<T>` | Optional Zod schema describing context structure |
 
 ### Sandbox Bindings
 

@@ -36,6 +36,7 @@ export {
   USER_PROMPT_WITH_ROOT,
   buildSystemPrompt,
   buildUserPrompt,
+  zodSchemaToTypeDescription,
 } from "./prompts.js";
 
 // LLM Client
@@ -52,4 +53,6 @@ export type {
   RLMResult,
   RLMTraceEntry,
   ChunkOptions,
+  ContextSchema,
+  InferContextType,
 } from "./types.js";

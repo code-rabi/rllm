@@ -71,31 +71,16 @@ export class LLMClient {
   }
 
   /**
-   * Check if this model supports temperature parameter
-   */
-  private supportsTemperature(): boolean {
-    // Reasoning models (o1, o3, gpt-5-mini, etc.) don't support temperature
-    const noTempModels = ["o1", "o3", "o4", "gpt-5-mini", "gpt-5-nano"];
-    return !noTempModels.some(m => this.model.includes(m));
-  }
-
-  /**
    * Create a chat completion with optional tool calling
    */
   async complete(options: CompletionOptions): Promise<CompletionResult> {
-    const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    const response = await this.client.chat.completions.create({
       model: this.model,
       messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       tools: options.tools as OpenAI.Chat.Completions.ChatCompletionTool[] | undefined,
+      temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens,
-    };
-
-    // Only set temperature for models that support it
-    if (this.supportsTemperature()) {
-      params.temperature = options.temperature ?? 0.7;
-    }
-
-    const response = await this.client.chat.completions.create(params);
+    });
 
     const choice = response.choices[0]!;
     const message: ChatMessage = {

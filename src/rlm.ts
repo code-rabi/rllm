@@ -4,10 +4,11 @@
  * Code execution mode (like Python RLM) - LLM writes JS code, runs in V8 isolate
  */
 
+import type { ZodType } from "zod";
 import { LLMClient, type LLMClientOptions } from "./llm-client.js";
 import { Sandbox, type SandboxResult } from "./sandbox.js";
 import { findCodeBlocks, findFinalAnswer, formatIteration } from "./parsing.js";
-import { RLM_SYSTEM_PROMPT, buildSystemPrompt, buildUserPrompt } from "./prompts.js";
+import { RLM_SYSTEM_PROMPT, buildSystemPrompt, buildUserPrompt, zodSchemaToTypeDescription } from "./prompts.js";
 import type { ChatMessage, TokenUsage, RLMResult, RLMTraceEntry } from "./types.js";
 
 // ============================================================================
@@ -25,9 +26,19 @@ export interface RLMConfig {
   verbose?: boolean;
 }
 
-export interface CompletionOptions {
-  /** Root prompt shown to LLM each iteration (the main question) */
-  rootPrompt?: string;
+export interface CompletionOptions<TContext = string> {
+  /** 
+   * The context data available to LLM-generated code.
+   * Can be a string or any structured data.
+   */
+  context?: TContext;
+  
+  /**
+   * Zod schema describing the context structure.
+   * When provided, the LLM receives type information about the context,
+   * enabling it to write better code that understands the data structure.
+   */
+  contextSchema?: ZodType<TContext>;
 }
 
 export interface CodeBlock {
@@ -83,14 +94,19 @@ export class RLM {
    * - Write arbitrary JavaScript code
    * - Query sub-LLMs via llm_query()
    * - Iterate until it finds an answer
+   * 
+   * @param prompt - The main question or task for the LLM
+   * @param options - Options including context data and optional schema
    */
-  async completion(
-    context: string | unknown,
-    options: CompletionOptions = {}
+  async completion<TContext = string>(
+    prompt: string,
+    options: CompletionOptions<TContext> = {}
   ): Promise<RLMResult> {
     const startTime = Date.now();
     const trace: RLMTraceEntry[] = [];
 
+    const context = options.context ?? ("" as unknown as TContext);
+    
     // Create sandbox for this completion
     const sandbox = new Sandbox(this.client, this.systemPrompt);
     sandbox.loadContext(context);
@@ -100,11 +116,17 @@ export class RLM {
     const contextType = typeof context === "string" ? "string" : 
                         Array.isArray(context) ? "array" : "object";
     
+    // Generate type description from Zod schema if provided
+    const schemaDescription = options.contextSchema 
+      ? zodSchemaToTypeDescription(options.contextSchema)
+      : null;
+    
     let messageHistory = buildSystemPrompt(
       this.systemPrompt,
       [contextStr.length],
       contextStr.length,
-      contextType
+      contextType,
+      schemaDescription
     ) as ChatMessage[];
 
     let iterations = 0;
@@ -114,7 +136,7 @@ export class RLM {
       iterations = i + 1;
 
       // Build current prompt
-      const userPrompt = buildUserPrompt(options.rootPrompt ?? null, i);
+      const userPrompt = buildUserPrompt(prompt, i);
       const currentMessages = [...messageHistory, userPrompt];
 
       // Query LLM

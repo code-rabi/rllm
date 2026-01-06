@@ -5,6 +5,8 @@
  * Note: Modified for JavaScript instead of Python
  */
 
+import type { ZodType } from "zod";
+
 /**
  * Main RLM system prompt - instructs the LLM on how to use the REPL environment
  */
@@ -76,13 +78,226 @@ export const USER_PROMPT_WITH_ROOT = `Think step-by-step on what to do using the
 Continue using the REPL environment, which has the \`context\` variable, and querying sub-LLMs by writing to \`\`\`repl\`\`\` tags, and determine your answer. Your next action:`;
 
 /**
+ * Get the Zod type name, supporting both Zod 3 and Zod 4
+ */
+function getZodTypeName(schema: unknown): string | undefined {
+  const s = schema as Record<string, unknown>;
+  
+  // Zod 3: _def.typeName
+  if (s._def && typeof s._def === "object") {
+    const def = s._def as Record<string, unknown>;
+    if (typeof def.typeName === "string") {
+      return def.typeName;
+    }
+  }
+  
+  // Zod 4: _zod.def.type or constructor name
+  if (s._zod && typeof s._zod === "object") {
+    const zod = s._zod as Record<string, unknown>;
+    if (zod.def && typeof zod.def === "object") {
+      const def = zod.def as Record<string, unknown>;
+      if (typeof def.type === "string") {
+        return def.type;
+      }
+    }
+  }
+  
+  // Try constructor name as fallback
+  if (s.constructor && s.constructor.name) {
+    return s.constructor.name;
+  }
+  
+  return undefined;
+}
+
+/**
+ * Get the inner schema from a Zod definition (works with Zod 3 and 4)
+ */
+function getInnerSchema(schema: unknown, key: string): unknown {
+  const s = schema as Record<string, unknown>;
+  
+  // Zod 3: _def[key]
+  if (s._def && typeof s._def === "object") {
+    const def = s._def as Record<string, unknown>;
+    if (def[key]) return def[key];
+  }
+  
+  // Zod 4: _zod.def[key]
+  if (s._zod && typeof s._zod === "object") {
+    const zod = s._zod as Record<string, unknown>;
+    if (zod.def && typeof zod.def === "object") {
+      const def = zod.def as Record<string, unknown>;
+      if (def[key]) return def[key];
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * Get object shape from a Zod object schema (works with Zod 3 and 4)
+ */
+function getObjectShape(schema: unknown): Record<string, unknown> | undefined {
+  const s = schema as Record<string, unknown>;
+  
+  // Zod 3: _def.shape()
+  if (s._def && typeof s._def === "object") {
+    const def = s._def as Record<string, unknown>;
+    if (typeof def.shape === "function") {
+      return def.shape() as Record<string, unknown>;
+    }
+    if (def.shape && typeof def.shape === "object") {
+      return def.shape as Record<string, unknown>;
+    }
+  }
+  
+  // Zod 4: _zod.def.shape
+  if (s._zod && typeof s._zod === "object") {
+    const zod = s._zod as Record<string, unknown>;
+    if (zod.def && typeof zod.def === "object") {
+      const def = zod.def as Record<string, unknown>;
+      if (def.shape && typeof def.shape === "object") {
+        return def.shape as Record<string, unknown>;
+      }
+    }
+  }
+  
+  // Zod 4: shape property directly
+  if (s.shape && typeof s.shape === "object") {
+    return s.shape as Record<string, unknown>;
+  }
+  
+  return undefined;
+}
+
+/**
+ * Convert a Zod schema to a TypeScript type description for the LLM
+ * Supports both Zod 3 and Zod 4
+ */
+export function zodSchemaToTypeDescription(schema: ZodType): string {
+  const typeName = getZodTypeName(schema);
+  
+  if (!typeName) {
+    return "unknown";
+  }
+
+  // Normalize type names (Zod 4 uses lowercase, Zod 3 uses ZodX)
+  const normalizedType = typeName.replace(/^Zod/, "").toLowerCase();
+  
+  switch (normalizedType) {
+    case "string":
+      return "string";
+    case "number":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "null":
+      return "null";
+    case "undefined":
+      return "undefined";
+    case "any":
+      return "any";
+    case "unknown":
+      return "unknown";
+    case "never":
+      return "never";
+    case "void":
+      return "void";
+    case "date":
+      return "Date";
+    case "bigint":
+      return "bigint";
+    case "symbol":
+      return "symbol";
+    case "literal": {
+      const value = getInnerSchema(schema, "value");
+      return typeof value === "string" ? `"${value}"` : String(value);
+    }
+    case "array": {
+      const itemType = getInnerSchema(schema, "type") || getInnerSchema(schema, "element");
+      if (itemType) {
+        return `${zodSchemaToTypeDescription(itemType as ZodType)}[]`;
+      }
+      return "unknown[]";
+    }
+    case "object": {
+      const shape = getObjectShape(schema);
+      if (shape) {
+        const props = Object.entries(shape).map(([key, val]) => {
+          const valTypeName = getZodTypeName(val);
+          const isOptional = valTypeName?.toLowerCase().includes("optional");
+          return `  ${key}${isOptional ? "?" : ""}: ${zodSchemaToTypeDescription(val as ZodType)};`;
+        });
+        return `{\n${props.join("\n")}\n}`;
+      }
+      return "object";
+    }
+    case "optional": {
+      const inner = getInnerSchema(schema, "innerType") || getInnerSchema(schema, "wrapped");
+      if (inner) {
+        return `${zodSchemaToTypeDescription(inner as ZodType)} | undefined`;
+      }
+      return "unknown | undefined";
+    }
+    case "nullable": {
+      const inner = getInnerSchema(schema, "innerType") || getInnerSchema(schema, "wrapped");
+      if (inner) {
+        return `${zodSchemaToTypeDescription(inner as ZodType)} | null`;
+      }
+      return "unknown | null";
+    }
+    case "union": {
+      const options = getInnerSchema(schema, "options") as ZodType[] | undefined;
+      if (options && Array.isArray(options)) {
+        return options.map(opt => zodSchemaToTypeDescription(opt)).join(" | ");
+      }
+      return "unknown";
+    }
+    case "enum": {
+      const values = getInnerSchema(schema, "values") as string[] | undefined;
+      if (values && Array.isArray(values)) {
+        return values.map(v => `"${v}"`).join(" | ");
+      }
+      // Zod 4 might store as entries
+      const entries = getInnerSchema(schema, "entries") as Record<string, string> | undefined;
+      if (entries && typeof entries === "object") {
+        return Object.values(entries).map(v => `"${v}"`).join(" | ");
+      }
+      return "string";
+    }
+    case "record": {
+      const keyType = getInnerSchema(schema, "keyType");
+      const valueType = getInnerSchema(schema, "valueType");
+      const keyStr = keyType ? zodSchemaToTypeDescription(keyType as ZodType) : "string";
+      const valStr = valueType ? zodSchemaToTypeDescription(valueType as ZodType) : "unknown";
+      return `Record<${keyStr}, ${valStr}>`;
+    }
+    case "tuple": {
+      const items = getInnerSchema(schema, "items") as ZodType[] | undefined;
+      if (items && Array.isArray(items)) {
+        return `[${items.map(item => zodSchemaToTypeDescription(item)).join(", ")}]`;
+      }
+      return "[]";
+    }
+    default:
+      // For complex or unknown types, try to get a description
+      const desc = getInnerSchema(schema, "description");
+      if (typeof desc === "string") {
+        return desc;
+      }
+      return "unknown";
+  }
+}
+
+/**
  * Build the initial system prompt with context metadata
  */
 export function buildSystemPrompt(
   systemPrompt: string,
   contextLengths: number[],
   contextTotalLength: number,
-  contextType: string
+  contextType: string,
+  schemaDescription?: string | null
 ): Array<{ role: "system" | "assistant"; content: string }> {
   // Truncate context lengths display if too many
   let lengthsDisplay: string;
@@ -93,7 +308,12 @@ export function buildSystemPrompt(
     lengthsDisplay = `[${contextLengths.join(", ")}]`;
   }
 
-  const metadataPrompt = `Your context is a ${contextType} with ${contextTotalLength} total characters, and is broken up into chunks of char lengths: ${lengthsDisplay}.`;
+  let metadataPrompt = `Your context is a ${contextType} with ${contextTotalLength} total characters, and is broken up into chunks of char lengths: ${lengthsDisplay}.`;
+
+  // Add type information if schema was provided
+  if (schemaDescription) {
+    metadataPrompt += `\n\nThe \`context\` variable has the following TypeScript type:\n\`\`\`typescript\ntype Context = ${schemaDescription}\n\`\`\`\n\nYou can access the properties of \`context\` directly according to this type structure.`;
+  }
 
   return [
     { role: "system", content: systemPrompt },
@@ -105,26 +325,18 @@ export function buildSystemPrompt(
  * Build the user prompt for an iteration
  */
 export function buildUserPrompt(
-  rootPrompt: string | null,
+  prompt: string,
   iteration: number
 ): { role: "user"; content: string } {
-  let prompt: string;
+  let content: string;
 
   if (iteration === 0) {
     const safeguard = "You have not interacted with the REPL environment or seen your prompt / context yet. Your next action should be to look through and figure out how to answer the prompt, so don't just provide a final answer yet.\n\n";
-    prompt = safeguard + (
-      rootPrompt
-        ? USER_PROMPT_WITH_ROOT.replace("{rootPrompt}", rootPrompt)
-        : USER_PROMPT
-    );
+    content = safeguard + USER_PROMPT_WITH_ROOT.replace("{rootPrompt}", prompt);
   } else {
-    prompt = "The history before is your previous interactions with the REPL environment. " + (
-      rootPrompt
-        ? USER_PROMPT_WITH_ROOT.replace("{rootPrompt}", rootPrompt)
-        : USER_PROMPT
-    );
+    content = "The history before is your previous interactions with the REPL environment. " + 
+      USER_PROMPT_WITH_ROOT.replace("{rootPrompt}", prompt);
   }
 
-  return { role: "user", content: prompt };
+  return { role: "user", content };
 }
-

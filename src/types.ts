@@ -2,6 +2,23 @@
  * Core types for RLM (Recursive Language Models)
  */
 
+import type { ZodType } from "zod";
+
+// ============================================================================
+// Context Schema Types
+// ============================================================================
+
+/**
+ * A Zod schema that defines the structure of context data.
+ * Used to provide type information to both TypeScript and the LLM.
+ */
+export type ContextSchema<T = unknown> = ZodType<T>;
+
+/**
+ * Infer the type from a context schema
+ */
+export type InferContextType<S> = S extends ZodType<infer T> ? T : string;
+
 // ============================================================================
 // LLM Client Types
 // ============================================================================
@@ -89,4 +106,3 @@ export interface ChunkOptions {
   /** Split on these delimiters (in priority order) */
   delimiters?: string[];
 }
-

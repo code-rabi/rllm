@@ -223,6 +223,8 @@ export class Sandbox {
 
   /**
    * Execute code in the sandbox
+   * 
+   * Errors in user code are caught and returned in stderr so the LLM can fix them.
    */
   async execute(code: string, options: SandboxOptions = {}): Promise<SandboxResult> {
     const timeout = options.timeout ?? 300000; // 5 min default
@@ -232,31 +234,47 @@ export class Sandbox {
     const context = this.createContext(options);
 
     try {
-      // Wrap code to handle async, catch ALL errors, and capture variables
-      // Errors in LLM code should NOT crash - they get reported back so LLM can fix
-      // We use a two-level try/catch to ensure errors never escape
+      // Wrap code with error handling so errors don't crash, but get reported back
+      // The LLM can then see the error and fix its code
       const wrappedCode = `
         (async () => {
-          let __userError__ = null;
+          let __executionError__ = null;
+          
           try {
             ${code}
           } catch (__e__) {
-            __userError__ = __e__;
-            // Report error to stderr so LLM can see and fix it
-            console.error(__e__.name + ': ' + __e__.message);
+            __executionError__ = __e__;
+            // Format error message for the LLM to understand and fix
+            const errorType = __e__.name || 'Error';
+            const errorMsg = __e__.message || String(__e__);
+            console.error('❌ Code Error: ' + errorType + ': ' + errorMsg);
             if (__e__.stack) {
-              console.error(__e__.stack.split('\\n').slice(0, 3).join('\\n'));
+              // Extract relevant stack lines (skip internal ones)
+              const stackLines = __e__.stack.split('\\n')
+                .filter(line => line.includes('rlm-sandbox.js') || line.includes('at '))
+                .slice(0, 5);
+              if (stackLines.length > 0) {
+                console.error('Stack trace:\\n' + stackLines.join('\\n'));
+              }
             }
+            console.error('\\n💡 Please fix the error above and try again.');
           }
           
-          // Always try to capture variables, even after error
+          // Always try to capture variables, even after an error
+          // This helps the LLM see what state was achieved before the error
           try {
             const __capturedLocals__ = {};
             const __skipKeys__ = new Set([
               'console', 'print', 'context', 'llm_query', 'llm_query_batched', 
               'FINAL', 'FINAL_VAR', 'JSON', 'Math', 'Date', 'Array', 'Object',
               'String', 'Number', 'Boolean', 'Map', 'Set', 'Promise', 'RegExp',
-              'Error', 'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'
+              'Error', 'TypeError', 'RangeError', 'SyntaxError', 'URIError',
+              'EvalError', 'ReferenceError', 'setTimeout', 'setInterval', 
+              'clearTimeout', 'clearInterval', 'setImmediate', 'clearImmediate',
+              'queueMicrotask', 'atob', 'btoa', 'WeakMap', 'WeakSet',
+              'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURI',
+              'decodeURI', 'encodeURIComponent', 'decodeURIComponent',
+              'Infinity', 'NaN', 'undefined', '__locals__', '__executionError__'
             ]);
             for (const key of Object.keys(this)) {
               if (!key.startsWith('__') && 
@@ -264,41 +282,52 @@ export class Sandbox {
                   !__skipKeys__.has(key)) {
                 try {
                   __capturedLocals__[key] = this[key];
-                } catch {}
+                } catch (__varErr__) {
+                  // Skip variables that can't be captured
+                }
               }
             }
             Object.assign(__locals__, __capturedLocals__);
-          } catch (__captureError__) {
+          } catch (__captureErr__) {
             // Ignore errors during variable capture
-            console.error('Warning: Failed to capture some variables');
           }
-        })().catch(__finalError__ => {
-          // Catch any unhandled promise rejections
-          console.error('Unhandled error: ' + __finalError__.message);
-        })
+          
+          // Return whether there was an error (don't re-throw, just record)
+          return { error: __executionError__ };
+        })()
       `;
 
       const script = new vm.Script(wrappedCode, {
         filename: "rlm-sandbox.js",
       });
 
-      const result = script.runInContext(context, { timeout });
+      const scriptResult = script.runInContext(context, { timeout });
 
-      // If result is a promise, await it with error handling
-      if (result instanceof Promise) {
-        try {
-          await result;
-        } catch (promiseError) {
-          // Promise rejection - capture error but don't crash
-          const msg = promiseError instanceof Error 
-            ? `${promiseError.name}: ${promiseError.message}` 
-            : String(promiseError);
-          this.stderr.push(msg);
-        }
+      // If result is a promise, await it
+      let executionResult: { error: Error | null } = { error: null };
+      if (scriptResult instanceof Promise) {
+        executionResult = await scriptResult;
       }
 
       // Sync locals from context
       this.syncLocals(context);
+
+      // Check if there was an error in the wrapped code
+      if (executionResult?.error) {
+        const err = executionResult.error;
+        const errorMessage = err instanceof Error 
+          ? `${err.name}: ${err.message}` 
+          : String(err);
+        
+        return {
+          stdout: this.stdout.join("\n"),
+          stderr: this.stderr.join("\n"),
+          locals: { ...this.locals },
+          executionTimeMs: Date.now() - startTime,
+          llmCalls: [...this.llmCalls],
+          error: errorMessage,
+        };
+      }
 
       return {
         stdout: this.stdout.join("\n"),
@@ -308,11 +337,15 @@ export class Sandbox {
         llmCalls: [...this.llmCalls],
       };
     } catch (e) {
+      // This catches syntax errors and other issues that prevent code from running at all
       const errorMessage = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+      
+      // Add a helpful message for the LLM
+      const helpfulError = `❌ Code Error: ${errorMessage}\n\n💡 Please fix the error above and try again.`;
       
       return {
         stdout: this.stdout.join("\n"),
-        stderr: this.stderr.join("\n") + (this.stderr.length ? "\n" : "") + errorMessage,
+        stderr: this.stderr.join("\n") + (this.stderr.length ? "\n" : "") + helpfulError,
         locals: { ...this.locals },
         executionTimeMs: Date.now() - startTime,
         llmCalls: [...this.llmCalls],

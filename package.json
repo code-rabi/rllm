@@ -2,11 +2,31 @@
   "name": "rllm",
   "version": "0.1.0",
   "description": "TypeScript port of Recursive Language Models (RLMs) - a task-agnostic inference paradigm for handling near-infinite length contexts",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./cjs": {
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js"
+    },
+    "./esm": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc && tsc -p tsconfig.cjs.json && node scripts/fix-cjs.mjs",
     "dev": "tsc --watch",
     "lint": "oxlint src",
     "test": "vitest run",

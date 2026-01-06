@@ -4,6 +4,11 @@ A TypeScript implementation of [Recursive Language Models](https://arxiv.org/abs
 
 Inspired by [Cloudflare's Code Mode](https://blog.cloudflare.com/code-mode/) approach.
 
+**Key differences from the [Python version](https://github.com/alexzhang13/rlm):**
+- [V8 isolates](#why-v8-isolates-not-tcpcontainers) instead of subprocess/TCP
+- [Zod schema support](#structured-context-with-zod-schema) for typed context
+- TypeScript-native
+
 ## Installation
 
 ```bash

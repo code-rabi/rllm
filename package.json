@@ -1,10 +1,22 @@
 {
   "name": "rllm",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TypeScript port of Recursive Language Models (RLMs) - a task-agnostic inference paradigm for handling near-infinite length contexts",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdiPat/rlm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AdiPat/rlm/issues"
+  },
+  "homepage": "https://github.com/AdiPat/rlm#readme",
   "exports": {
     ".": {
       "import": {
@@ -70,6 +82,9 @@
     "zod": "^3.25.76"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

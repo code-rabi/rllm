@@ -5,8 +5,8 @@
  * LLM writes JavaScript code that runs in V8 isolate (like Python RLM).
  */
 
-// Core RLM
-export { RLM, createRLM, type RLMConfig, type CompletionOptions, type RLMIteration } from "./rlm.js";
+// Core RLLM
+export { RLLM, createRLLM, type RLMConfig, type CompletionOptions, type RLMIteration } from "./rlm.js";
 
 // Sandbox
 export { Sandbox, type SandboxResult, type SandboxOptions, type LLMCallRecord } from "./sandbox.js";

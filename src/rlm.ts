@@ -63,7 +63,7 @@ export interface RLMIteration {
  * LLM writes JavaScript code that runs in a V8 isolate (like Python RLM).
  * The LLM can recursively call itself or other LLMs via llm_query().
  */
-export class RLM {
+export class RLLM {
   private client: LLMClient;
   private config: RLMConfig;
   private systemPrompt: string;
@@ -302,15 +302,15 @@ export class RLM {
 // ============================================================================
 
 /**
- * Create an RLM instance with sensible defaults
+ * Create an RLLM instance with sensible defaults
  */
-export function createRLM(options: {
+export function createRLLM(options: {
   model?: string;
   provider?: "openai" | "anthropic" | "openrouter";
   apiKey?: string;
   verbose?: boolean;
-}): RLM {
-  return new RLM({
+}): RLLM {
+  return new RLLM({
     client: {
       provider: options.provider ?? "openai",
       model: options.model ?? "gpt-4o-mini",

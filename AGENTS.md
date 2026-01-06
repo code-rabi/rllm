@@ -24,7 +24,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 │  RLLM TypeScript                                            │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────────────────────────┐   │
-│  │   RLM       │    │  V8 Isolate (Sandbox)            │   │
+│  │   RLLM      │    │  V8 Isolate (Sandbox)            │   │
 │  │   Class     │───▶│                                  │   │
 │  └─────────────┘    │  • context (injected data)       │   │
 │        │            │  • llm_query() ──┐               │   │

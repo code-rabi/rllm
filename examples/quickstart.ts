@@ -7,13 +7,13 @@
  */
 
 import "dotenv/config";
-import { createRLM } from "../src/index.js";
+import { createRLLM } from "../src/index.js";
 
 async function main() {
-  console.log("=== RLM TypeScript - Quick Start ===\n");
+  console.log("=== RLLM TypeScript - Quick Start ===\n");
 
-  // Create RLM instance
-  const rlm = createRLM({
+  // Create RLLM instance
+  const rlm = createRLLM({
     model: "gpt-4o-mini",
     provider: "openai",
     verbose: true,

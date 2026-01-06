@@ -9,12 +9,12 @@
 
 import "dotenv/config";
 import { z } from "zod";
-import { createRLM } from "../src/index.js";
+import { createRLLM } from "../src/index.js";
 
 async function main() {
-  console.log("=== RLM TypeScript - Schema Context Examples ===\n");
+  console.log("=== RLLM TypeScript - Schema Context Examples ===\n");
 
-  const rlm = createRLM({
+  const rlm = createRLLM({
     model: "gpt-4o-mini",
     provider: "openai",
     verbose: true,

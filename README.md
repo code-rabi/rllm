@@ -22,9 +22,9 @@ npm install rllm
 LLM writes JavaScript code that runs in a secure V8 isolate:
 
 ```typescript
-import { createRLM } from 'rllm';
+import { createRLLM } from 'rllm';
 
-const rlm = createRLM({
+const rlm = createRLLM({
   model: 'gpt-4o-mini',
   verbose: true,
 });
@@ -45,7 +45,7 @@ For structured data, you can provide a Zod schema. The LLM will receive type inf
 
 ```typescript
 import { z } from 'zod';
-import { createRLM } from 'rllm';
+import { createRLLM } from 'rllm';
 
 // Define schema for your data
 const DataSchema = z.object({
@@ -61,7 +61,7 @@ const DataSchema = z.object({
   settings: z.record(z.string(), z.boolean()),
 });
 
-const rlm = createRLM({ model: 'gpt-4o-mini' });
+const rlm = createRLLM({ model: 'gpt-4o-mini' });
 
 const result = await rlm.completion(
   "How many admin users are there? What actions did they perform?",
@@ -93,12 +93,12 @@ FINAL(summary);
 
 ## API Reference
 
-### `createRLM(options)`
+### `createRLLM(options)`
 
-Create an RLM instance with sensible defaults.
+Create an RLLM instance with sensible defaults.
 
 ```typescript
-const rlm = createRLM({
+const rlm = createRLLM({
   model: 'gpt-4o-mini',      // Model name
   provider: 'openai',         // 'openai' | 'anthropic' | 'openrouter'
   apiKey: process.env.KEY,    // Optional, uses env vars by default
@@ -106,7 +106,7 @@ const rlm = createRLM({
 });
 ```
 
-### `RLM` Methods
+### `RLLM` Methods
 
 | Method | Description |
 |--------|-------------|
@@ -141,7 +141,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 │  RLLM TypeScript                                            │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────────────────────────┐   │
-│  │   RLM       │    │  V8 Isolate (Sandbox)            │   │
+│  │   RLLM      │    │  V8 Isolate (Sandbox)            │   │
 │  │   Class     │───▶│                                  │   │
 │  └─────────────┘    │  • context (injected data)       │   │
 │        │            │  • llm_query() ──┐               │   │

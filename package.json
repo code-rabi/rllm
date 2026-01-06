@@ -1,5 +1,5 @@
 {
-  "name": "rlm-ts",
+  "name": "rllm",
   "version": "0.1.0",
   "description": "TypeScript port of Recursive Language Models (RLMs) - a task-agnostic inference paradigm for handling near-infinite length contexts",
   "main": "dist/index.js",

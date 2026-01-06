@@ -1,4 +1,4 @@
-# RLM-TS: Recursive Language Models (TypeScript)
+# RLLM: Recursive Large Language Models (TypeScript)
 
 A TypeScript implementation of [Recursive Language Models](https://arxiv.org/abs/2512.24601) for processing large contexts with LLMs.
 
@@ -7,9 +7,9 @@ Inspired by [Cloudflare's Code Mode](https://blog.cloudflare.com/code-mode/) app
 ## Installation
 
 ```bash
-pnpm add rlm-ts
+pnpm add rllm
 # or
-npm install rlm-ts
+npm install rllm
 ```
 
 ## Quick Start
@@ -17,7 +17,7 @@ npm install rlm-ts
 LLM writes JavaScript code that runs in a secure V8 isolate:
 
 ```typescript
-import { createRLM } from 'rlm-ts';
+import { createRLM } from 'rllm';
 
 const rlm = createRLM({
   model: 'gpt-4o-mini',
@@ -40,7 +40,7 @@ For structured data, you can provide a Zod schema. The LLM will receive type inf
 
 ```typescript
 import { z } from 'zod';
-import { createRLM } from 'rlm-ts';
+import { createRLM } from 'rllm';
 
 // Define schema for your data
 const DataSchema = z.object({
@@ -133,7 +133,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  RLM TypeScript                                             │
+│  RLLM TypeScript                                            │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────────────────────────┐   │
 │  │   RLM       │    │  V8 Isolate (Sandbox)            │   │
@@ -154,11 +154,11 @@ No TCP. No subprocess. Direct function calls via bindings.
 
 ## Why V8 Isolates? (Not TCP/Containers)
 
-The Python RLM uses subprocess + TCP sockets for code execution. We use **V8 isolates** instead:
+The Python RLLM uses subprocess + TCP sockets for code execution. We use **V8 isolates** instead:
 
 ```
-Python RLM:  LLM → Python exec() → subprocess → TCP socket → LMHandler
-TypeScript:  LLM → V8 isolate (same process) → direct function calls
+Python RLLM:  LLM → Python exec() → subprocess → TCP socket → LMHandler
+TypeScript:   LLM → V8 isolate (same process) → direct function calls
 ```
 
 
@@ -186,7 +186,7 @@ pnpm test
 
 ## License
 
-MIT - Same as the original Python RLM.
+MIT - Same as the original Python RLLM.
 
 ## Credits
 

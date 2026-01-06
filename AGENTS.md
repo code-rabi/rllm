@@ -1,4 +1,4 @@
-# RLM-TS: Recursive Language Models (TypeScript)
+# RLLM: Recursive Large Language Models (TypeScript)
 
 A TypeScript implementation of [Recursive Language Models](https://arxiv.org/abs/2512.24601) for processing large contexts with LLMs.
 
@@ -21,7 +21,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  RLM TypeScript                                             │
+│  RLLM TypeScript                                            │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────────────────────────┐   │
 │  │   RLM       │    │  V8 Isolate (Sandbox)            │   │

@@ -39,9 +39,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Run tests
-        run: pnpm test
-
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         with:

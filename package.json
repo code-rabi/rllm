@@ -1,0 +1,45 @@
+{
+  "name": "rlm-ts",
+  "version": "0.1.0",
+  "description": "TypeScript port of Recursive Language Models (RLMs) - a task-agnostic inference paradigm for handling near-infinite length contexts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "example": "tsx examples/quickstart.ts"
+  },
+  "keywords": [
+    "llm",
+    "recursive",
+    "language-model",
+    "ai",
+    "openai",
+    "anthropic",
+    "inference"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.76.0",
+    "dotenv": "^16.4.5",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8",
+    "eslint": "^9.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

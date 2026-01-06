@@ -1,0 +1,55 @@
+/**
+ * RLM - Recursive Language Models (TypeScript)
+ * 
+ * Code execution mode implementation for processing large contexts with LLMs.
+ * LLM writes JavaScript code that runs in V8 isolate (like Python RLM).
+ */
+
+// Core RLM
+export { RLM, createRLM, type RLMConfig, type CompletionOptions, type RLMIteration } from "./rlm.js";
+
+// Sandbox
+export { Sandbox, type SandboxResult, type SandboxOptions, type LLMCallRecord } from "./sandbox.js";
+
+// Chunking utilities
+export {
+  chunkText,
+  chunkByLines,
+  chunkByPattern,
+  chunkMarkdownByHeaders,
+  chunkToTokenBudget,
+  estimateTokens,
+} from "./chunking.js";
+
+// Parsing utilities
+export {
+  findCodeBlocks,
+  findFinalAnswer,
+  formatExecutionResult,
+  formatIteration,
+} from "./parsing.js";
+
+// Prompts
+export {
+  RLM_SYSTEM_PROMPT,
+  USER_PROMPT,
+  USER_PROMPT_WITH_ROOT,
+  buildSystemPrompt,
+  buildUserPrompt,
+} from "./prompts.js";
+
+// LLM Client
+export { LLMClient, type LLMClientOptions, type CompletionOptions as LLMCompletionOptions, type CompletionResult } from "./llm-client.js";
+
+// Types
+export type {
+  LLMProvider,
+  ChatMessage,
+  ToolCall,
+  ToolDefinition,
+  TokenUsage,
+  RLMUsage,
+  RLMResult,
+  RLMTraceEntry,
+  ChunkOptions,
+} from "./types.js";

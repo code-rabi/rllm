@@ -1,0 +1,85 @@
+{
+  "model": "gpt-5.2",
+  "results": [
+    {
+      "contextTokens": "8k",
+      "contextChars": 32000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 42673,
+      "pairsTime": 57517.333333333336,
+      "oolongTime": 83169.66666666667
+    },
+    {
+      "contextTokens": "16k",
+      "contextChars": 64000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 44283.4,
+      "pairsTime": 79314,
+      "oolongTime": 64523.666666666664
+    },
+    {
+      "contextTokens": "33k",
+      "contextChars": 132000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 51882.6,
+      "pairsTime": 59109.333333333336,
+      "oolongTime": 81097.33333333333
+    },
+    {
+      "contextTokens": "66k",
+      "contextChars": 264000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 49808.8,
+      "pairsTime": 65655,
+      "oolongTime": 57201.666666666664
+    },
+    {
+      "contextTokens": "131k",
+      "contextChars": 524000,
+      "sniahScore": 80,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 50825.4,
+      "pairsTime": 87356.33333333333,
+      "oolongTime": 55553.333333333336
+    },
+    {
+      "contextTokens": "262k",
+      "contextChars": 1048000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 45520,
+      "pairsTime": 106515.66666666667,
+      "oolongTime": 76702
+    },
+    {
+      "contextTokens": "524k",
+      "contextChars": 2097000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 49190.4,
+      "pairsTime": 103815.33333333333,
+      "oolongTime": 56722
+    },
+    {
+      "contextTokens": "1M",
+      "contextChars": 4000000,
+      "sniahScore": 100,
+      "pairsScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 39445.4,
+      "pairsTime": 61586.333333333336,
+      "oolongTime": 59455.666666666664
+    }
+  ]
+}

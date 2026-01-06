@@ -1,0 +1,85 @@
+{
+  "model": "gpt-5",
+  "results": [
+    {
+      "contextTokens": "8k",
+      "contextChars": 32000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 399.6,
+      "pairsTime": 360.6666666666667,
+      "oolongTime": 182
+    },
+    {
+      "contextTokens": "16k",
+      "contextChars": 64000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 267.4,
+      "pairsTime": 186.66666666666666,
+      "oolongTime": 226
+    },
+    {
+      "contextTokens": "33k",
+      "contextChars": 132000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 202.4,
+      "pairsTime": 190.66666666666666,
+      "oolongTime": 181
+    },
+    {
+      "contextTokens": "66k",
+      "contextChars": 264000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 189.6,
+      "pairsTime": 273.3333333333333,
+      "oolongTime": 251.33333333333334
+    },
+    {
+      "contextTokens": "131k",
+      "contextChars": 524000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 190.8,
+      "pairsTime": 172.66666666666666,
+      "oolongTime": 198
+    },
+    {
+      "contextTokens": "262k",
+      "contextChars": 1048000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 193.8,
+      "pairsTime": 178.66666666666666,
+      "oolongTime": 164.33333333333334
+    },
+    {
+      "contextTokens": "524k",
+      "contextChars": 2097000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 187.6,
+      "pairsTime": 231.66666666666666,
+      "oolongTime": 192.33333333333334
+    },
+    {
+      "contextTokens": "1M",
+      "contextChars": 4000000,
+      "sniahScore": 0,
+      "pairsScore": 0,
+      "oolongScore": 0,
+      "sniahTime": 175.6,
+      "pairsTime": 188,
+      "oolongTime": 197
+    }
+  ]
+}

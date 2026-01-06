@@ -1,0 +1,69 @@
+{
+  "model": "gpt-5-mini",
+  "results": [
+    {
+      "contextTokens": "8k",
+      "contextChars": 32000,
+      "sniahScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 41842,
+      "oolongTime": 32101.5
+    },
+    {
+      "contextTokens": "16k",
+      "contextChars": 64000,
+      "sniahScore": 66.66666666666666,
+      "oolongScore": 100,
+      "sniahTime": 30178.666666666668,
+      "oolongTime": 34754
+    },
+    {
+      "contextTokens": "33k",
+      "contextChars": 132000,
+      "sniahScore": 66.66666666666666,
+      "oolongScore": 100,
+      "sniahTime": 35034.333333333336,
+      "oolongTime": 51045
+    },
+    {
+      "contextTokens": "66k",
+      "contextChars": 264000,
+      "sniahScore": 100,
+      "oolongScore": 50,
+      "sniahTime": 39227,
+      "oolongTime": 106932
+    },
+    {
+      "contextTokens": "131k",
+      "contextChars": 524000,
+      "sniahScore": 66.66666666666666,
+      "oolongScore": 100,
+      "sniahTime": 57898.333333333336,
+      "oolongTime": 28835
+    },
+    {
+      "contextTokens": "262k",
+      "contextChars": 1048000,
+      "sniahScore": 100,
+      "oolongScore": 100,
+      "sniahTime": 25795.666666666668,
+      "oolongTime": 44811.5
+    },
+    {
+      "contextTokens": "524k",
+      "contextChars": 2097000,
+      "sniahScore": 66.66666666666666,
+      "oolongScore": 100,
+      "sniahTime": 46126,
+      "oolongTime": 51498.5
+    },
+    {
+      "contextTokens": "1M",
+      "contextChars": 4000000,
+      "sniahScore": 33.33333333333333,
+      "oolongScore": 50,
+      "sniahTime": 48021.333333333336,
+      "oolongTime": 76376.5
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "model": "gpt-5-mini",
+  "results": [
+    {
+      "contextTokens": "8k",
+      "contextChars": 32000,
+      "sniahScore": 100,
+      "pairsScore": 0,
+      "oolongScore": 66.66666666666666,
+      "sniahTime": 28319.4,
+      "pairsTime": 455413.3333333333,
+      "oolongTime": 148059
+    },
+    {
+      "contextTokens": "16k",
+      "contextChars": 64000,
+      "sniahScore": 100,
+      "pairsScore": 0,
+      "oolongScore": 100,
+      "sniahTime": 24555,
+      "pairsTime": 131512,
+      "oolongTime": 53014
+    },
+    {
+      "contextTokens": "33k",
+      "contextChars": 132000,
+      "sniahScore": 100,
+      "pairsScore": 0,
+      "oolongScore": 100,
+      "sniahTime": 34494.2,
+      "pairsTime": 93647,
+      "oolongTime": 109063
+    },
+    {
+      "contextTokens": "66k",
+      "contextChars": 264000,
+      "sniahScore": 100,
+      "pairsScore": 0,
+      "oolongScore": 66.66666666666666,
+      "sniahTime": 31435,
+      "pairsTime": 464998.6666666667,
+      "oolongTime": 38764.333333333336
+    },
+    {
+      "contextTokens": "131k",
+      "contextChars": 524000,
+      "sniahScore": 80,
+      "pairsScore": 0,
+      "oolongScore": 100,
+      "sniahTime": 268889.4,
+      "pairsTime": 298001.6666666667,
+      "oolongTime": 45658
+    },
+    {
+      "contextTokens": "262k",
+      "contextChars": 1048000,
+      "sniahScore": 80,
+      "pairsScore": 0,
+      "oolongScore": 100,
+      "sniahTime": 33921.2,
+      "pairsTime": 142706.33333333334,
+      "oolongTime": 30974.666666666668
+    },
+    {
+      "contextTokens": "524k",
+      "contextChars": 2097000,
+      "sniahScore": 40,
+      "pairsScore": 0,
+      "oolongScore": 66.66666666666666,
+      "sniahTime": 49299,
+      "pairsTime": 186125.66666666666,
+      "oolongTime": 47382.666666666664
+    },
+    {
+      "contextTokens": "1M",
+      "contextChars": 4000000,
+      "sniahScore": 100,
+      "pairsScore": 33.33333333333333,
+      "oolongScore": 66.66666666666666,
+      "sniahTime": 47515,
+      "pairsTime": 144748.66666666666,
+      "oolongTime": 68379.66666666667
+    }
+  ]
+}

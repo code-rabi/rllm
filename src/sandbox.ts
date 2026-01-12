@@ -6,8 +6,17 @@
  */
 
 import * as vm from "node:vm";
+import { z } from "zod";
 import type { LLMClient } from "./llm-client.js";
 import type { ChatMessage, TokenUsage } from "./types.js";
+
+// Schema for validating giveFinalAnswer() argument
+const FinalAnswerSchema = z.object({
+  message: z.string(),
+  data: z.unknown().optional(),
+});
+
+export type FinalAnswer = z.infer<typeof FinalAnswerSchema>;
 
 // ============================================================================
 // Types
@@ -18,6 +27,7 @@ export interface SandboxResult {
   stderr: string;
   locals: Record<string, unknown>;
   executionTimeMs: number;
+  returnValue?: unknown;
   llmCalls: LLMCallRecord[];
   error?: string;
 }
@@ -48,8 +58,7 @@ export interface SandboxOptions {
  * - `context` - The loaded context data
  * - `llm_query(prompt, model?)` - Query sub-LLM
  * - `llm_query_batched(prompts, model?)` - Batch query sub-LLMs
- * - `FINAL(answer)` - Return final answer
- * - `FINAL_VAR(varName)` - Return variable as final answer
+ * - `giveFinalAnswer({ message, data? })` - Return final answer (validated)
  * - `print(...)` - Console output
  * - Basic JS builtins (Array, Object, Math, JSON, etc.)
  */
@@ -64,7 +73,7 @@ export class Sandbox {
   private stderr: string[] = [];
   private locals: Record<string, unknown> = {};
   private llmCalls: LLMCallRecord[] = [];
-  private finalAnswer: string | null = null;
+  private finalAnswer: FinalAnswer | null = null;
 
   constructor(client: LLMClient, systemPrompt?: string) {
     this.client = client;
@@ -85,11 +94,10 @@ export class Sandbox {
    * Initialize the VM context with all bindings
    */
   private createContext(options: SandboxOptions = {}): vm.Context {
-    // Reset state
+    // Reset state (but keep finalAnswer from previous executions)
     this.stdout = [];
     this.stderr = [];
     this.llmCalls = [];
-    this.finalAnswer = null;
 
     const sandbox: Record<string, unknown> = {
       // ========== Console / Print ==========
@@ -109,17 +117,15 @@ export class Sandbox {
       llm_query_batched: (prompts: string[], model?: string) => this.llmQueryBatched(prompts, model),
 
       // ========== Final Answer ==========
-      FINAL: (answer: unknown) => {
-        this.finalAnswer = String(answer);
-        return this.finalAnswer;
-      },
-      FINAL_VAR: (varName: string) => {
-        const name = varName.trim().replace(/^["']|["']$/g, "");
-        if (name in this.locals) {
-          this.finalAnswer = String(this.locals[name]);
-        } else {
-          this.finalAnswer = `Error: Variable '${name}' not found`;
+      giveFinalAnswer: (answer: unknown) => {
+        const parsed = FinalAnswerSchema.safeParse(answer);
+        if (!parsed.success) {
+          const errors = parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+          const errorMsg = `❌ giveFinalAnswer() validation failed: ${errors}\n\nExpected format: giveFinalAnswer({ message: "your answer string", data: optionalData })\n\nYou provided: ${JSON.stringify(answer, null, 2)}\n\n💡 The 'message' property is REQUIRED and must be a string.`;
+          this.stdout.push(errorMsg);
+          throw new Error(errorMsg);
         }
+        this.finalAnswer = parsed.data;
         return this.finalAnswer;
       },
 
@@ -239,9 +245,12 @@ export class Sandbox {
       const wrappedCode = `
         (async () => {
           let __executionError__ = null;
+          let __returnValue__ = undefined;
           
           try {
-            ${code}
+            __returnValue__ = await (async () => {
+              ${code}
+            })();
           } catch (__e__) {
             __executionError__ = __e__;
             // Format error message for the LLM to understand and fix
@@ -266,7 +275,7 @@ export class Sandbox {
             const __capturedLocals__ = {};
             const __skipKeys__ = new Set([
               'console', 'print', 'context', 'llm_query', 'llm_query_batched', 
-              'FINAL', 'FINAL_VAR', 'JSON', 'Math', 'Date', 'Array', 'Object',
+              'giveFinalAnswer', 'JSON', 'Math', 'Date', 'Array', 'Object',
               'String', 'Number', 'Boolean', 'Map', 'Set', 'Promise', 'RegExp',
               'Error', 'TypeError', 'RangeError', 'SyntaxError', 'URIError',
               'EvalError', 'ReferenceError', 'setTimeout', 'setInterval', 
@@ -292,8 +301,8 @@ export class Sandbox {
             // Ignore errors during variable capture
           }
           
-          // Return whether there was an error (don't re-throw, just record)
-          return { error: __executionError__ };
+          // Return error status and captured return value
+          return { error: __executionError__, returnValue: __returnValue__ };
         })()
       `;
 
@@ -304,7 +313,7 @@ export class Sandbox {
       const scriptResult = script.runInContext(context, { timeout });
 
       // If result is a promise, await it
-      let executionResult: { error: Error | null } = { error: null };
+      let executionResult: { error: Error | null; returnValue?: unknown } = { error: null };
       if (scriptResult instanceof Promise) {
         executionResult = await scriptResult;
       }
@@ -326,6 +335,7 @@ export class Sandbox {
           executionTimeMs: Date.now() - startTime,
           llmCalls: [...this.llmCalls],
           error: errorMessage,
+          returnValue: executionResult?.returnValue,
         };
       }
 
@@ -335,6 +345,7 @@ export class Sandbox {
         locals: { ...this.locals },
         executionTimeMs: Date.now() - startTime,
         llmCalls: [...this.llmCalls],
+        returnValue: executionResult?.returnValue,
       };
     } catch (e) {
       // This catches syntax errors and other issues that prevent code from running at all
@@ -360,7 +371,7 @@ export class Sandbox {
   private syncLocals(context: vm.Context): void {
     const skipKeys = new Set([
       "console", "print", "context", "llm_query", "llm_query_batched",
-      "FINAL", "FINAL_VAR", "JSON", "Math", "Date", "Array", "Object",
+      "giveFinalAnswer", "JSON", "Math", "Date", "Array", "Object",
       "String", "Number", "Boolean", "Map", "Set", "WeakMap", "WeakSet",
       "Promise", "RegExp", "Error", "TypeError", "RangeError", "SyntaxError",
       "URIError", "EvalError", "ReferenceError", "parseInt", "parseFloat",
@@ -378,9 +389,10 @@ export class Sandbox {
   }
 
   /**
-   * Get the final answer if one was set via FINAL() or FINAL_VAR()
+   * Get the final answer if giveFinalAnswer() was called.
+   * Returns null if no final answer was set.
    */
-  getFinalAnswer(): string | null {
+  getFinalAnswer(): FinalAnswer | null {
     return this.finalAnswer;
   }
 
@@ -422,6 +434,13 @@ export class Sandbox {
   /**
    * Reset sandbox state (keeps context)
    */
+  /**
+   * Clear the final answer (called at start of new completion)
+   */
+  clearFinalAnswer(): void {
+    this.finalAnswer = null;
+  }
+
   reset(): void {
     this.stdout = [];
     this.stderr = [];

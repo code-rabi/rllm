@@ -25,28 +25,7 @@ export function findCodeBlocks(text: string): string[] {
   return results;
 }
 
-/**
- * Find FINAL(...) or FINAL_VAR(...) statement in response.
- * Returns [type, content] or null if not found.
- */
-export function findFinalAnswer(text: string): [string, string] | null {
-  // Check for FINAL_VAR pattern first - must be at start of line
-  const finalVarPattern = /^\s*FINAL_VAR\s*\(\s*["']?([^"')]+)["']?\s*\)/m;
-  let match = finalVarPattern.exec(text);
-  if (match) {
-    return ["FINAL_VAR", match[1]!.trim()];
-  }
-
-  // Check for FINAL pattern - must be at start of line
-  // Handle both single-line and multi-line content
-  const finalPattern = /^\s*FINAL\s*\(([\s\S]*?)\)\s*$/m;
-  match = finalPattern.exec(text);
-  if (match) {
-    return ["FINAL", match[1]!.trim()];
-  }
-
-  return null;
-}
+// Note: findFinalAnswer() is deprecated - use sandbox.getFinalAnswer() callback approach instead
 
 /**
  * Format a sandbox execution result for display

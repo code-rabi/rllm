@@ -1,0 +1,35 @@
+{
+  "name": "node-modules-viz",
+  "version": "1.0.0",
+  "description": "Interactive 3D visualization of node_modules dependencies with RLLM",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "server": "node server.mjs",
+    "start": "./start.sh"
+  },
+  "dependencies": {
+    "@pnpm/lockfile-file": "^9.1.3",
+    "dotenv": "^16.4.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-force-graph-3d": "^1.26.0",
+    "rllm": "workspace:*",
+    "ws": "^8.16.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/ws": "^8.5.10",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0"
+  }
+}

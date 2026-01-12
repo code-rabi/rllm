@@ -7,9 +7,10 @@
 import type { ZodType } from "zod";
 import { LLMClient, type LLMClientOptions } from "./llm-client.js";
 import { Sandbox, type SandboxResult } from "./sandbox.js";
-import { findCodeBlocks, findFinalAnswer, formatIteration } from "./parsing.js";
+import { findCodeBlocks, formatIteration, formatExecutionResult } from "./parsing.js";
+import type { FinalAnswer } from "./sandbox.js";
 import { RLM_SYSTEM_PROMPT, buildSystemPrompt, buildUserPrompt, zodSchemaToTypeDescription } from "./prompts.js";
-import type { ChatMessage, TokenUsage, RLMResult, RLMTraceEntry } from "./types.js";
+import type { ChatMessage, TokenUsage, RLMResult, RLMTraceEntry, RLMEventCallback, RLMEvent } from "./types.js";
 
 // ============================================================================
 // Configuration
@@ -39,6 +40,12 @@ export interface CompletionOptions<TContext = string> {
    * enabling it to write better code that understands the data structure.
    */
   contextSchema?: ZodType<TContext>;
+
+  /**
+   * Callback for real-time events during execution.
+   * Useful for visualizing LLM queries and code execution.
+   */
+  onEvent?: RLMEventCallback;
 }
 
 export interface CodeBlock {
@@ -132,6 +139,10 @@ export class RLLM {
     let iterations = 0;
     let totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
+    const emit = (event: Omit<RLMEvent, 'timestamp'>) => {
+      options.onEvent?.({ ...event, timestamp: Date.now() });
+    };
+
     for (let i = 0; i < this.config.maxIterations!; i++) {
       iterations = i + 1;
 
@@ -141,7 +152,19 @@ export class RLLM {
 
       // Query LLM
       this.log(`Iteration ${i + 1}: Querying LLM...`);
+      emit({ type: 'iteration_start', iteration: i + 1 });
+      
+      // Get the last user message as prompt (truncated for UI)
+      const lastUserMsg = currentMessages[currentMessages.length - 1]?.content || '';
+      emit({ 
+        type: 'llm_query_start', 
+        iteration: i + 1,
+        prompt: lastUserMsg.length > 2000 ? lastUserMsg.slice(0, 2000) + '...' : lastUserMsg
+      });
+      
       const llmResult = await this.client.complete({ messages: currentMessages });
+      
+      emit({ type: 'llm_query_end', iteration: i + 1, response: llmResult.message.content });
       
       totalUsage.promptTokens += llmResult.usage.promptTokens;
       totalUsage.completionTokens += llmResult.usage.completionTokens;
@@ -159,41 +182,13 @@ export class RLLM {
 
       const response = llmResult.message.content;
 
-      // Check for final answer in response
-      const finalAnswerMatch = findFinalAnswer(response);
-      if (finalAnswerMatch) {
-        const [type, content] = finalAnswerMatch;
-        let finalAnswer: string;
-
-        if (type === "FINAL_VAR") {
-          const varValue = sandbox.getLocal(content);
-          finalAnswer = varValue !== undefined ? String(varValue) : `Error: Variable '${content}' not found`;
-        } else {
-          finalAnswer = content;
-        }
-
-        this.log(`Final answer found at iteration ${i + 1}`);
-
-        return {
-          answer: finalAnswer,
-          usage: {
-            totalCalls: iterations + sandbox.getLLMCalls().length,
-            rootCalls: iterations,
-            subCalls: sandbox.getLLMCalls().length,
-            tokenUsage: this.addUsage(totalUsage, sandbox.getTotalUsage()),
-            executionTimeMs: Date.now() - startTime,
-          },
-          iterations,
-          trace,
-        };
-      }
-
       // Find and execute code blocks
       const codeBlockStrs = findCodeBlocks(response);
       const codeBlocks: CodeBlock[] = [];
 
       for (const code of codeBlockStrs) {
         this.log(`Executing code block...`);
+        emit({ type: 'code_execution_start', iteration: i + 1, code });
         
         trace.push({
           type: "tool_call",
@@ -203,6 +198,17 @@ export class RLLM {
 
         const result = await sandbox.execute(code);
         codeBlocks.push({ code, result });
+        
+        // Format the result as the LLM will see it
+        const formattedOutput = formatExecutionResult(result);
+        
+        emit({ 
+          type: 'code_execution_end', 
+          iteration: i + 1, 
+          code,
+          output: formattedOutput,
+          error: result.error 
+        });
 
         trace.push({
           type: "tool_result",
@@ -214,13 +220,14 @@ export class RLLM {
           },
         });
 
-        // Check if code set a final answer
-        const sandboxFinal = sandbox.getFinalAnswer();
-        if (sandboxFinal) {
-          this.log(`Final answer set via code at iteration ${i + 1}`);
+        // Check if giveFinalAnswer() was called
+        const finalAnswer = sandbox.getFinalAnswer();
+        if (finalAnswer) {
+          this.log(`Final answer set via giveFinalAnswer() at iteration ${i + 1}`);
+          emit({ type: 'final_answer', iteration: i + 1, answer: finalAnswer.message });
 
           return {
-            answer: sandboxFinal,
+            answer: finalAnswer,
             usage: {
               totalCalls: iterations + sandbox.getLLMCalls().length,
               rootCalls: iterations,
@@ -246,7 +253,7 @@ export class RLLM {
     
     const finalPrompt: ChatMessage = {
       role: "user",
-      content: "You've reached the maximum iterations. Please provide your best final answer now using FINAL(your answer).",
+      content: "You've reached the maximum iterations. Please provide your best final answer now using giveFinalAnswer({ message: 'your answer', data: optionalData }).",
     };
     
     const finalResult = await this.client.complete({
@@ -257,11 +264,32 @@ export class RLLM {
     totalUsage.completionTokens += finalResult.usage.completionTokens;
     totalUsage.totalTokens += finalResult.usage.totalTokens;
 
-    const finalMatch = findFinalAnswer(finalResult.message.content);
-    const answer = finalMatch ? finalMatch[1] : finalResult.message.content;
+    // Execute any code blocks in the final response
+    const finalCodeBlocks = findCodeBlocks(finalResult.message.content);
+    for (const code of finalCodeBlocks) {
+      await sandbox.execute(code);
+    }
 
+    // Check if giveFinalAnswer() was called
+    const finalAnswer = sandbox.getFinalAnswer();
+    if (finalAnswer) {
+      return {
+        answer: finalAnswer,
+        usage: {
+          totalCalls: iterations + 1 + sandbox.getLLMCalls().length,
+          rootCalls: iterations + 1,
+          subCalls: sandbox.getLLMCalls().length,
+          tokenUsage: this.addUsage(totalUsage, sandbox.getTotalUsage()),
+          executionTimeMs: Date.now() - startTime,
+        },
+        iterations: iterations + 1,
+        trace,
+      };
+    }
+
+    // Fallback: return the raw response as the answer
     return {
-      answer,
+      answer: { message: finalResult.message.content, data: undefined },
       usage: {
         totalCalls: iterations + 1 + sandbox.getLLMCalls().length,
         rootCalls: iterations + 1,
@@ -306,7 +334,7 @@ export class RLLM {
  */
 export function createRLLM(options: {
   model?: string;
-  provider?: "openai" | "anthropic" | "openrouter" | "custom";
+  provider?: "openai" | "anthropic" | "gemini" | "openrouter" | "custom";
   apiKey?: string;
   baseUrl?: string;
   verbose?: boolean;

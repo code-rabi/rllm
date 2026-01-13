@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import * as THREE from 'three';
 import './App.css';
 
 interface GraphData {
@@ -55,6 +57,43 @@ function App() {
   const [highlightedNodes, setHighlightedNodes] = useState(new Set<string>());
   const accessQueue = useRef<string[]>([]);
   const isProcessingQueue = useRef(false);
+  const bloomPassAdded = useRef(false);
+
+  // Add bloom post-processing and lighting for realistic look
+  useEffect(() => {
+    if (fgRef.current && graphData.nodes.length > 0 && !bloomPassAdded.current) {
+      // Add bloom pass
+      const bloomPass = new UnrealBloomPass();
+      bloomPass.strength = 3;
+      bloomPass.radius = 1;
+      bloomPass.threshold = 0.7;
+      fgRef.current.postProcessingComposer().addPass(bloomPass);
+      
+      // Add realistic lighting to the scene
+      const scene = fgRef.current.scene();
+      
+      // Ambient light for base illumination
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
+      
+      // Key light (main directional light)
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.0) as any;
+      keyLight.position.set(200, 200, 200);
+      scene.add(keyLight);
+      
+      // Fill light (softer, from opposite side)
+      const fillLight = new THREE.DirectionalLight(0x8888ff, 0.5) as any;
+      fillLight.position.set(-200, 0, -200);
+      scene.add(fillLight);
+      
+      // Rim light for edge highlights
+      const rimLight = new THREE.DirectionalLight(0xffffcc, 0.3) as any;
+      rimLight.position.set(0, -200, 200);
+      scene.add(rimLight);
+      
+      bloomPassAdded.current = true;
+    }
+  }, [graphData.nodes.length]);
   
   // Process access events with smooth delay
   const processAccessQueue = useCallback(() => {
@@ -83,11 +122,11 @@ function App() {
           next.delete(nodeId);
           return next;
         });
-      }, 800);
+      }, 300);
       
       // Process next with delay (30ms for smooth stream effect)
       if (accessQueue.current.length > 0) {
-        setTimeout(processNext, 40);
+        setTimeout(processNext, 60);
       } else {
         isProcessingQueue.current = false;
       }
@@ -247,7 +286,7 @@ function App() {
   };
 
   const nodeColor = useCallback((node: any) => {
-    if (highlightedNodes.has(node.id)) return '#ffff00'; // Bright yellow
+    if (highlightedNodes.has(node.id)) return '#ffff00'; // Bright yellow for bloom
     return node.color || '#58a6ff';
   }, [highlightedNodes]);
 
@@ -294,6 +333,36 @@ function App() {
     return isLinkHighlighted(link) ? '#ffff00' : 'rgba(139, 148, 158, 0.5)';
   }, [isLinkHighlighted]);
 
+  // High-quality sphere geometry (reused for performance)
+  const sphereGeometry = useMemo(() => new THREE.SphereGeometry(1, 64, 64), []);
+
+  // Custom node rendering with realistic materials
+  const nodeThreeObject = useCallback((node: any) => {
+    const isHighlighted = highlightedNodes.has(node.id);
+    const baseSize = node.val || 5;
+    const size = isHighlighted ? baseSize * 1.5 : baseSize * 0.8;
+    
+    // Get node color
+    const colorHex = isHighlighted ? '#ffff00' : (node.color || '#58a6ff');
+    const color = new THREE.Color(colorHex);
+    
+    // Create material with realistic properties
+    const material = new THREE.MeshPhysicalMaterial({
+      color: color,
+      metalness: 0.3,
+      roughness: 0.4,
+      emissive: isHighlighted ? color : new THREE.Color(0x000000),
+      emissiveIntensity: isHighlighted ? 0.2 : 0,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.25,
+    });
+    
+    const mesh = new THREE.Mesh(sphereGeometry, material as any) as any;
+    mesh.scale.set(size, size, size);
+    
+    return mesh;
+  }, [highlightedNodes, sphereGeometry]);
+
   return (
     <div className="app">
       <header className="header">
@@ -307,7 +376,7 @@ function App() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && runQuery()}
+            onKeyDown={(e) => e.key === 'Enter' && runQuery()}
             placeholder="Ask a question about your dependencies..."
             disabled={isRunning}
           />
@@ -449,8 +518,8 @@ function App() {
           ref={fgRef}
           graphData={graphData}
           nodeLabel={(node: any) => `${node.name}${node.version ? '@' + node.version : ''}`}
-          nodeColor={nodeColor}
-          nodeVal={nodeVal}
+          nodeThreeObject={nodeThreeObject}
+          nodeThreeObjectExtend={false}
           linkColor={linkColor}
           linkWidth={linkWidth}
           linkOpacity={0.6}
@@ -458,7 +527,7 @@ function App() {
           linkDirectionalParticleSpeed={linkDirectionalParticleSpeed}
           linkDirectionalParticleWidth={linkDirectionalParticleWidth}
           linkDirectionalParticleColor={linkDirectionalParticleColor}
-          backgroundColor="#0d1117"
+          backgroundColor="#000002"
           enableNodeDrag={true}
           enableNavigationControls={true}
           showNavInfo={false}

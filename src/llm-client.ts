@@ -108,9 +108,18 @@ export class LLMClient {
       requestParams.temperature = options.temperature ?? 0.7;
     }
 
-    const response = await this.client.chat.completions.create(requestParams);
+    let response: OpenAI.Chat.Completions.ChatCompletion;
+    try {
+      response = await this.client.chat.completions.create(requestParams);
+    } catch (error: unknown) {
+      // Log context for debugging, then propagate the original error
+      const err = error as Error & { status?: number; response?: { data?: unknown } };
+      const status = err.status ?? (error as { statusCode?: number }).statusCode;
+      console.error(`[LLMClient] API error (${this.provider}/${this.model}): status=${status}`, error);
+      throw error;
+    }
 
-    const choice = response.choices[0]!;
+    const choice = response.choices[0]!
     const message: ChatMessage = {
       role: "assistant",
       content: choice.message.content ?? "",

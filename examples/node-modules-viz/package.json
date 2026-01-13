@@ -18,6 +18,7 @@
     "react-dom": "^18.2.0",
     "react-force-graph-3d": "^1.26.0",
     "rllm": "workspace:*",
+    "three": "^0.170.0",
     "ws": "^8.16.0",
     "zod": "^3.25.76"
   },

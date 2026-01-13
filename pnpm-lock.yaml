@@ -78,6 +78,9 @@ importers:
       rllm:
         specifier: workspace:*
         version: link:../..
+      three:
+        specifier: ^0.170.0
+        version: 0.170.0
       ws:
         specifier: ^8.16.0
         version: 8.19.0
@@ -2017,8 +2020,8 @@ packages:
     peerDependencies:
       three: '>=0.168'
 
-  three@0.168.0:
-    resolution: {integrity: sha512-6m6jXtDwMJEK/GGMbAOTSAmxNdzKvvBzgd7q8bE/7Tr6m7PaBh5kKLrN7faWtlglXbzj7sVba48Idwx+NRsZXw==}
+  three@0.170.0:
+    resolution: {integrity: sha512-FQK+LEpYc0fBD+J8g6oSEyyNzjp+Q7Ks1C568WWaoMRLW+TkNNWmenWeGgJjV105Gd+p/2ql1ZcjYvNiPZBhuQ==}
 
   through2@4.0.2:
     resolution: {integrity: sha512-iOqSav00cVxEEICeD7TjLB1sueEL+81Wpzp2bY17uZjZN0pWZPuo4suZ/61VujxmqSGFfgOcNuTZ85QJwNZQpw==}
@@ -2240,9 +2243,9 @@ snapshots:
     dependencies:
       accessor-fn: 1.5.3
       kapsule: 1.16.3
-      three: 0.168.0
-      three-forcegraph: 1.43.0(three@0.168.0)
-      three-render-objects: 1.40.4(three@0.168.0)
+      three: 0.170.0
+      three-forcegraph: 1.43.0(three@0.170.0)
+      three-render-objects: 1.40.4(three@0.170.0)
 
   '@babel/code-frame@7.28.6':
     dependencies:
@@ -4032,7 +4035,7 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  three-forcegraph@1.43.0(three@0.168.0):
+  three-forcegraph@1.43.0(three@0.170.0):
     dependencies:
       accessor-fn: 1.5.3
       d3-array: 3.2.4
@@ -4043,19 +4046,19 @@ snapshots:
       kapsule: 1.16.3
       ngraph.forcelayout: 3.3.1
       ngraph.graph: 20.1.1
-      three: 0.168.0
+      three: 0.170.0
       tinycolor2: 1.6.0
 
-  three-render-objects@1.40.4(three@0.168.0):
+  three-render-objects@1.40.4(three@0.170.0):
     dependencies:
       '@tweenjs/tween.js': 25.0.0
       accessor-fn: 1.5.3
       float-tooltip: 1.7.5
       kapsule: 1.16.3
       polished: 4.3.1
-      three: 0.168.0
+      three: 0.170.0
 
-  three@0.168.0: {}
+  three@0.170.0: {}
 
   through2@4.0.2:
     dependencies:

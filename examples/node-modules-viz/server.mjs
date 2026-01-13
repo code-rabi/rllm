@@ -42,15 +42,27 @@ const TARGET = resolve(process.cwd(), '../../');
 console.log('🔍 node_modules Graph Analyzer');
 console.log(`Target: ${TARGET}\n`);
 
-// Check for API key
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('⚠️  OPENAI_API_KEY not set - queries will not work');
+// Check for API key based on provider
+const provider = process.env.PROVIDER || 'gemini';
+const apiKeyName = {
+  gemini: 'GEMINI_API_KEY or GOOGLE_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+}[provider] || 'API key';
+
+const hasApiKey = provider === 'gemini' 
+  ? (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)
+  : process.env[`${provider.toUpperCase()}_API_KEY`];
+
+if (!hasApiKey) {
+  console.warn(`⚠️  ${apiKeyName} not set - queries will not work`);
 }
 
 // Initialize RLLM
 const rlm = createRLLM({
   model: process.env.MODEL || 'gemini-3-flash-preview',
-  provider: 'gemini',
+  provider: process.env.PROVIDER || 'gemini',
   verbose: true,
 });
 

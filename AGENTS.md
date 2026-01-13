@@ -13,8 +13,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 | `context` | The loaded context data |
 | `llm_query(prompt, model?)` | Query sub-LLM |
 | `llm_query_batched(prompts, model?)` | Batch query sub-LLMs |
-| `FINAL(answer)` | Return final answer |
-| `FINAL_VAR(varName)` | Return variable as final answer |
+| `giveFinalAnswer({ message, data? })` | Return final answer |
 | `print(...)` | Console output |
 
 ## Architecture
@@ -30,7 +29,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 │        │            │  • llm_query() ──┐               │   │
 │        │            │  • llm_query_batched()           │   │
 │        ▼            │  • print() / console             │   │
-│  ┌─────────────┐    │  • FINAL() / FINAL_VAR()         │   │
+│  ┌─────────────┐    │  • giveFinalAnswer()             │   │
 │  │  LLMClient  │◀───┼──────────────────┘               │   │
 │  │  (OpenAI)   │    │                                  │   │
 │  └─────────────┘    │  LLM-generated JS code runs here │   │

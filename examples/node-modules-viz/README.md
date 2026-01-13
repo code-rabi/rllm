@@ -135,7 +135,7 @@ for (const [name, ids] of Object.entries(context.packagesByName)) {
     duplicates.push({ name, versions: ids, totalSize: sizes.reduce((a,b) => a+b) });
   }
 }
-FINAL(JSON.stringify(duplicates, null, 2));
+giveFinalAnswer({ message: JSON.stringify(duplicates, null, 2) });
 ```
 
 Every property access (like `context.packages[id]`) triggers the Proxy, which emits an event to highlight that node in the visualization.

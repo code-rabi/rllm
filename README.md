@@ -21,7 +21,7 @@ npm install rllm
 
 RLLM analyzing a `node_modules` directory — the LLM writes JavaScript to parse dependencies, query sub-LLMs in parallel, and synthesize a final answer:
 
-![RLLM Demo](./RLLM.mp4)
+![RLLM Demo](./RLLM.gif)
 
 Built with Gemini Flash 3. See the full interactive example in [`examples/node-modules-viz/`](./examples/node-modules-viz/).
 
@@ -96,7 +96,7 @@ const findings = await llm_query_batched(
 
 const summary = await llm_query(`Combine findings:\n${findings.join('\n')}`);
 print(summary);
-FINAL(summary);
+giveFinalAnswer({ message: summary });
 ```
 
 ## API Reference
@@ -155,8 +155,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 | `context` | The loaded context data |
 | `llm_query(prompt, model?)` | Query sub-LLM |
 | `llm_query_batched(prompts, model?)` | Batch query sub-LLMs |
-| `FINAL(answer)` | Return final answer |
-| `FINAL_VAR(varName)` | Return variable as final answer |
+| `giveFinalAnswer({ message, data? })` | Return final answer |
 | `print(...)` | Console output |
 
 ### Real-time Events
@@ -192,7 +191,7 @@ const result = await rlm.completion("Analyze this data", {
 | `llm_query_end` | Main LLM response received |
 | `code_execution_start` | V8 isolate executing code |
 | `code_execution_end` | Code execution finished |
-| `final_answer` | `FINAL()` called with answer |
+| `final_answer` | `giveFinalAnswer()` called with answer |
 
 ## Architecture
 
@@ -207,7 +206,7 @@ const result = await rlm.completion("Analyze this data", {
 │        │            │  • llm_query() ──┐               │   │
 │        │            │  • llm_query_batched()           │   │
 │        ▼            │  • print() / console             │   │
-│  ┌─────────────┐    │  • FINAL() / FINAL_VAR()         │   │
+│  ┌─────────────┐    │  • giveFinalAnswer()             │   │
 │  │  LLMClient  │◀───┼──────────────────┘               │   │
 │  │  (OpenAI)   │    │                                  │   │
 │  └─────────────┘    │  LLM-generated JS code runs here │   │

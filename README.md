@@ -21,7 +21,7 @@ npm install rllm
 
 RLLM analyzing a `node_modules` directory — the LLM writes JavaScript to parse dependencies, query sub-LLMs in parallel, and synthesize a final answer:
 
-![RLLM Demo](./RLLM.gif)
+https://private-user-images.githubusercontent.com/24541325/535005656-2c6f2381-3af4-439d-83b7-1e686a51fa94.mp4
 
 Built with Gemini Flash 3. See the full interactive example in [`examples/node-modules-viz/`](./examples/node-modules-viz/).
 

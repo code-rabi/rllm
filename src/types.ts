@@ -107,7 +107,6 @@ export type RLMEventType =
   | "llm_query_end"
   | "code_execution_start"
   | "code_execution_end"
-  | "sub_llm_query"
   | "final_answer";
 
 export interface RLMEvent {

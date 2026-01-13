@@ -177,9 +177,6 @@ const result = await rlm.completion("Analyze this data", {
       case "code_execution_start":
         console.log(`Executing:\n${event.code}`);
         break;
-      case "sub_llm_query":
-        console.log(`Sub-query: ${event.prompt}`);
-        break;
       case "final_answer":
         console.log(`Answer: ${event.answer}`);
         break;
@@ -195,7 +192,6 @@ const result = await rlm.completion("Analyze this data", {
 | `llm_query_end` | Main LLM response received |
 | `code_execution_start` | V8 isolate executing code |
 | `code_execution_end` | Code execution finished |
-| `sub_llm_query` | Sub-LLM query via `llm_query()` |
 | `final_answer` | `FINAL()` called with answer |
 
 ## Architecture

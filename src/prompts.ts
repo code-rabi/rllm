@@ -57,9 +57,16 @@ const finalAnswer = await llm_query(
 print(finalAnswer);
 \`\`\`
 
-IMPORTANT: When you are done with the iterative process, you MUST provide a final answer inside a FINAL function when you have completed your task, NOT in code. Do not use these tags unless you have completed your task. You have two options:
-1. Use FINAL(your final answer here) to provide the answer directly
-2. Use FINAL_VAR(variable_name) to return a variable you have created in the REPL environment as your final output
+IMPORTANT: When you have your final answer, you MUST call \`giveFinalAnswer()\` with the required format:
+
+\`\`\`repl
+giveFinalAnswer({ 
+  message: "Your human-readable answer here",  // REQUIRED: must be a string
+  data: { ... }  // OPTIONAL: any structured data
+});
+\`\`\`
+
+The \`message\` property is REQUIRED and must be a string. The \`data\` property is optional and can contain any structured result data. This immediately ends execution and returns your result.
 
 Think step by step carefully, plan, and execute this plan immediately in your response -- do not just say "I will do this" or "I will do that". Output to the REPL environment and recursive LLMs as much as possible. Remember to explicitly answer the original query in your final answer.`;
 

@@ -23,7 +23,7 @@ export type InferContextType<S> = S extends ZodType<infer T> ? T : string;
 // LLM Client Types
 // ============================================================================
 
-export type LLMProvider = "openai" | "anthropic" | "openrouter" | "custom";
+export type LLMProvider = "openai" | "anthropic" | "gemini" | "openrouter" | "custom";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -81,8 +81,11 @@ export interface RLMUsage {
 // RLM Result Types
 // ============================================================================
 
-export interface RLMResult<T = string> {
-  answer: T;
+export interface RLMResult {
+  answer: {
+    message: string;
+    data?: unknown;
+  };
   usage: RLMUsage;
   iterations: number;
   trace: RLMTraceEntry[];
@@ -93,6 +96,32 @@ export interface RLMTraceEntry {
   timestamp: number;
   data: Record<string, unknown>;
 }
+
+// ============================================================================
+// Real-time Event Types
+// ============================================================================
+
+export type RLMEventType = 
+  | "iteration_start"
+  | "llm_query_start"
+  | "llm_query_end"
+  | "code_execution_start"
+  | "code_execution_end"
+  | "final_answer";
+
+export interface RLMEvent {
+  type: RLMEventType;
+  timestamp: number;
+  iteration?: number;
+  code?: string;
+  response?: string;
+  output?: string;
+  answer?: string;
+  error?: string;
+  prompt?: string;
+}
+
+export type RLMEventCallback = (event: RLMEvent) => void;
 
 // ============================================================================
 // Chunking Types

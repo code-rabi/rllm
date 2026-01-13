@@ -9,7 +9,7 @@
 export { RLLM, createRLLM, type RLMConfig, type CompletionOptions, type RLMIteration } from "./rlm.js";
 
 // Sandbox
-export { Sandbox, type SandboxResult, type SandboxOptions, type LLMCallRecord } from "./sandbox.js";
+export { Sandbox, type SandboxResult, type SandboxOptions, type LLMCallRecord, type FinalAnswer } from "./sandbox.js";
 
 // Chunking utilities
 export {
@@ -24,7 +24,6 @@ export {
 // Parsing utilities
 export {
   findCodeBlocks,
-  findFinalAnswer,
   formatExecutionResult,
   formatIteration,
 } from "./parsing.js";
@@ -55,4 +54,7 @@ export type {
   ChunkOptions,
   ContextSchema,
   InferContextType,
+  RLMEventType,
+  RLMEvent,
+  RLMEventCallback,
 } from "./types.js";

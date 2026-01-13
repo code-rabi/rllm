@@ -72,13 +72,16 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.18.1",
     "eslint": "^9.17.0",
+    "open": "^11.0.0",
     "oxlint": "^1.37.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
+    "ws": "^8.19.0",
     "zod": "^3.25.76"
   },
   "engines": {

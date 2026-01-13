@@ -59,6 +59,8 @@ export class LLMClient {
         return process.env["OPENAI_API_KEY"];
       case "anthropic":
         return process.env["ANTHROPIC_API_KEY"];
+      case "gemini":
+        return process.env["GEMINI_API_KEY"] ?? process.env["GOOGLE_API_KEY"];
       case "openrouter":
         return process.env["OPENROUTER_API_KEY"];
       case "custom":
@@ -72,6 +74,8 @@ export class LLMClient {
         return undefined; // Uses default
       case "anthropic":
         return "https://api.anthropic.com/v1";
+      case "gemini":
+        return "https://generativelanguage.googleapis.com/v1beta/openai/";
       case "openrouter":
         return "https://openrouter.ai/api/v1";
       case "custom":
@@ -80,18 +84,42 @@ export class LLMClient {
   }
 
   /**
+   * Check if model supports temperature parameter
+   */
+  private supportsTemperature(): boolean {
+    // Models that don't support temperature (reasoning models, newer models)
+    const noTempPatterns = ['o1', 'o3', 'gpt-5'];
+    return !noTempPatterns.some(p => this.model.includes(p));
+  }
+
+  /**
    * Create a chat completion with optional tool calling
    */
   async complete(options: CompletionOptions): Promise<CompletionResult> {
-    const response = await this.client.chat.completions.create({
+    const requestParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model: this.model,
       messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       tools: options.tools as OpenAI.Chat.Completions.ChatCompletionTool[] | undefined,
-      temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens,
-    });
+    };
 
-    const choice = response.choices[0]!;
+    // Only add temperature for models that support it
+    if (this.supportsTemperature()) {
+      requestParams.temperature = options.temperature ?? 0.7;
+    }
+
+    let response: OpenAI.Chat.Completions.ChatCompletion;
+    try {
+      response = await this.client.chat.completions.create(requestParams);
+    } catch (error: unknown) {
+      // Log context for debugging, then propagate the original error
+      const err = error as Error & { status?: number; response?: { data?: unknown } };
+      const status = err.status ?? (error as { statusCode?: number }).statusCode;
+      console.error(`[LLMClient] API error (${this.provider}/${this.model}): status=${status}`, error);
+      throw error;
+    }
+
+    const choice = response.choices[0]!
     const message: ChatMessage = {
       role: "assistant",
       content: choice.message.content ?? "",

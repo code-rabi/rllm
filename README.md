@@ -17,6 +17,14 @@ pnpm add rllm
 npm install rllm
 ```
 
+## Demo
+
+RLLM analyzing a `node_modules` directory — the LLM writes JavaScript to parse dependencies, query sub-LLMs in parallel, and synthesize a final answer:
+
+![RLLM Demo](./RLLM.gif)
+
+Built with Gemini Flash 3. See the full interactive example in [`examples/node-modules-viz/`](./examples/node-modules-viz/).
+
 ## Quick Start
 
 LLM writes JavaScript code that runs in a secure V8 isolate:
@@ -88,7 +96,7 @@ const findings = await llm_query_batched(
 
 const summary = await llm_query(`Combine findings:\n${findings.join('\n')}`);
 print(summary);
-FINAL(summary);
+giveFinalAnswer({ message: summary });
 ```
 
 ## API Reference
@@ -100,7 +108,7 @@ Create an RLLM instance with sensible defaults.
 ```typescript
 const rlm = createRLLM({
   model: 'gpt-4o-mini',      // Model name
-  provider: 'openai',         // 'openai' | 'anthropic' | 'openrouter' | 'custom'
+  provider: 'openai',         // 'openai' | 'anthropic' | 'gemini' | 'openrouter' | 'custom'
   apiKey: process.env.KEY,    // Optional, uses env vars by default
   baseUrl: undefined,         // Optional, required for 'custom' provider
   verbose: true,              // Enable logging
@@ -147,9 +155,43 @@ The V8 isolate provides these bindings to LLM-generated code:
 | `context` | The loaded context data |
 | `llm_query(prompt, model?)` | Query sub-LLM |
 | `llm_query_batched(prompts, model?)` | Batch query sub-LLMs |
-| `FINAL(answer)` | Return final answer |
-| `FINAL_VAR(varName)` | Return variable as final answer |
+| `giveFinalAnswer({ message, data? })` | Return final answer |
 | `print(...)` | Console output |
+
+### Real-time Events
+
+Subscribe to execution events for visualizations, debugging, or streaming UIs:
+
+```typescript
+const result = await rlm.completion("Analyze this data", {
+  context: myData,
+  onEvent: (event) => {
+    switch (event.type) {
+      case "iteration_start":
+        console.log(`Starting iteration ${event.iteration}`);
+        break;
+      case "llm_query_start":
+        console.log("LLM thinking...");
+        break;
+      case "code_execution_start":
+        console.log(`Executing:\n${event.code}`);
+        break;
+      case "final_answer":
+        console.log(`Answer: ${event.answer}`);
+        break;
+    }
+  }
+});
+```
+
+| Event Type | Description |
+|------------|-------------|
+| `iteration_start` | New iteration beginning |
+| `llm_query_start` | Main LLM query starting |
+| `llm_query_end` | Main LLM response received |
+| `code_execution_start` | V8 isolate executing code |
+| `code_execution_end` | Code execution finished |
+| `final_answer` | `giveFinalAnswer()` called with answer |
 
 ## Architecture
 
@@ -164,7 +206,7 @@ The V8 isolate provides these bindings to LLM-generated code:
 │        │            │  • llm_query() ──┐               │   │
 │        │            │  • llm_query_batched()           │   │
 │        ▼            │  • print() / console             │   │
-│  ┌─────────────┐    │  • FINAL() / FINAL_VAR()         │   │
+│  ┌─────────────┐    │  • giveFinalAnswer()             │   │
 │  │  LLMClient  │◀───┼──────────────────┘               │   │
 │  │  (OpenAI)   │    │                                  │   │
 │  └─────────────┘    │  LLM-generated JS code runs here │   │

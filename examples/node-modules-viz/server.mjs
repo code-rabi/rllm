@@ -49,6 +49,7 @@ const apiKeyName = {
   openai: 'OPENAI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
+  cerebras: 'CEREBRAS_API_KEY',
 }[provider] || 'API key';
 
 const hasApiKey = provider === 'gemini' 

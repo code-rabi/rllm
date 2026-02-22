@@ -156,6 +156,7 @@ Defaults:
 | `rlm.chat(messages)` | Direct LLM chat |
 | `rlm.getClient()` | Get underlying LLM client |
 
+
 ### `CompletionOptions`
 
 | Option | Type | Description |

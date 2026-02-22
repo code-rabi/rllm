@@ -211,6 +211,9 @@ Create a `.env` file:
 ```bash
 OPENAI_API_KEY=your_key_here
 MODEL=gpt-4o-mini  # or gpt-4o, gpt-4-turbo, etc.
+# Optional: switch provider (openai | anthropic | gemini | openrouter | cerebras)
+# PROVIDER=cerebras
+# CEREBRAS_API_KEY=your_key_here
 ```
 
 ## Tips

@@ -63,6 +63,8 @@ export class LLMClient {
         return process.env["GEMINI_API_KEY"] ?? process.env["GOOGLE_API_KEY"];
       case "openrouter":
         return process.env["OPENROUTER_API_KEY"];
+      case "cerebras":
+        return process.env["CEREBRAS_API_KEY"];
       case "custom":
         return undefined; // Must be provided explicitly
     }
@@ -78,6 +80,8 @@ export class LLMClient {
         return "https://generativelanguage.googleapis.com/v1beta/openai/";
       case "openrouter":
         return "https://openrouter.ai/api/v1";
+      case "cerebras":
+        return "https://api.cerebras.ai/v1";
       case "custom":
         return undefined; // Must be provided explicitly (validated in constructor)
     }

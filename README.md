@@ -108,7 +108,7 @@ Create an RLLM instance with sensible defaults.
 ```typescript
 const rlm = createRLLM({
   model: 'gpt-4o-mini',      // Model name
-  provider: 'openai',         // 'openai' | 'anthropic' | 'gemini' | 'openrouter' | 'custom'
+  provider: 'openai',         // 'openai' | 'anthropic' | 'gemini' | 'openrouter' | 'cerebras' | 'custom'
   apiKey: process.env.KEY,    // Optional, uses env vars by default
   baseUrl: undefined,         // Optional, required for 'custom' provider
   verbose: true,              // Enable logging
@@ -130,6 +130,23 @@ const rlm = createRLLM({
 ```
 
 **Note:** When using `provider: 'custom'`, the `baseUrl` parameter is **required**. An error will be thrown if it's not provided.
+
+### Cerebras Provider
+
+Use Cerebras with the built-in `cerebras` provider:
+
+```typescript
+const rlm = createRLLM({
+  provider: 'cerebras',
+  model: 'gpt-oss-120b',
+  // optional if CEREBRAS_API_KEY is set
+  apiKey: process.env.CEREBRAS_API_KEY,
+});
+```
+
+Defaults:
+- API key env var: `CEREBRAS_API_KEY`
+- Base URL: `https://api.cerebras.ai/v1`
 
 ### `RLLM` Methods
 

@@ -11,7 +11,7 @@ import { LLMClient } from "./llm-client.js";
 // Test the provider configuration logic directly
 // (extracted from LLMClient to make it testable)
 
-function getDefaultApiKey(provider: "openai" | "anthropic" | "openrouter" | "custom"): string | undefined {
+function getDefaultApiKey(provider: "openai" | "anthropic" | "openrouter" | "cerebras" | "custom"): string | undefined {
   switch (provider) {
     case "openai":
       return process.env["OPENAI_API_KEY"];
@@ -19,12 +19,14 @@ function getDefaultApiKey(provider: "openai" | "anthropic" | "openrouter" | "cus
       return process.env["ANTHROPIC_API_KEY"];
     case "openrouter":
       return process.env["OPENROUTER_API_KEY"];
+    case "cerebras":
+      return process.env["CEREBRAS_API_KEY"];
     case "custom":
       return undefined;
   }
 }
 
-function getDefaultBaseUrl(provider: "openai" | "anthropic" | "openrouter" | "custom"): string | undefined {
+function getDefaultBaseUrl(provider: "openai" | "anthropic" | "openrouter" | "cerebras" | "custom"): string | undefined {
   switch (provider) {
     case "openai":
       return undefined; // Uses default
@@ -32,6 +34,8 @@ function getDefaultBaseUrl(provider: "openai" | "anthropic" | "openrouter" | "cu
       return "https://api.anthropic.com/v1";
     case "openrouter":
       return "https://openrouter.ai/api/v1";
+    case "cerebras":
+      return "https://api.cerebras.ai/v1";
     case "custom":
       return undefined;
   }
@@ -49,6 +53,10 @@ describe("LLMClient provider configuration", () => {
 
     it("returns OpenRouter base URL", () => {
       expect(getDefaultBaseUrl("openrouter")).toBe("https://openrouter.ai/api/v1");
+    });
+
+    it("returns Cerebras base URL", () => {
+      expect(getDefaultBaseUrl("cerebras")).toBe("https://api.cerebras.ai/v1");
     });
   });
 
@@ -78,6 +86,15 @@ describe("LLMClient provider configuration", () => {
       expect(getDefaultApiKey("openrouter")).toBe("test-openrouter-key");
       
       process.env["OPENROUTER_API_KEY"] = original;
+    });
+
+    it("reads CEREBRAS_API_KEY for cerebras provider", () => {
+      const original = process.env["CEREBRAS_API_KEY"];
+      process.env["CEREBRAS_API_KEY"] = "test-cerebras-key";
+      
+      expect(getDefaultApiKey("cerebras")).toBe("test-cerebras-key");
+      
+      process.env["CEREBRAS_API_KEY"] = original;
     });
 
     it("returns undefined for custom provider (must be provided explicitly)", () => {

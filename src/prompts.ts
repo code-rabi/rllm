@@ -6,6 +6,7 @@
  */
 
 import type { ZodType } from "zod";
+import type { GenerateObjectRetryEvent } from "./types.js";
 
 /**
  * Main RLM system prompt - instructs the LLM on how to use the REPL environment
@@ -346,4 +347,66 @@ export function buildUserPrompt(
   }
 
   return { role: "user", content };
+}
+
+/**
+ * Build messages for schema-constrained JSON generation.
+ */
+export function buildGenerateObjectMessages(
+  prompt: string,
+  outputSchema: ZodType,
+  input?: unknown,
+  inputSchema?: ZodType
+): Array<{ role: "system" | "user"; content: string }> {
+  const outputSchemaDescription = zodSchemaToTypeDescription(outputSchema);
+  const inputSchemaDescription = inputSchema ? zodSchemaToTypeDescription(inputSchema) : null;
+  const inputSection = input !== undefined
+    ? (
+        "Input value (JSON):\n" +
+        `\`\`\`json\n${JSON.stringify(input, null, 2)}\n\`\`\`\n\n`
+      )
+    : "";
+  const inputTypeSection = inputSchemaDescription
+    ? (
+        "Input TypeScript type:\n" +
+        `\`\`\`typescript\ntype Input = ${inputSchemaDescription}\n\`\`\`\n\n`
+      )
+    : "";
+
+  return [
+    {
+      role: "system",
+      content:
+        "You generate structured data. Return exactly one valid JSON object that matches the provided schema. " +
+        "Do not include markdown, code fences, comments, or any extra text before/after the JSON.",
+    },
+    {
+      role: "user",
+      content:
+        `Task:\n${prompt}\n\n` +
+        inputTypeSection +
+        inputSection +
+        "Target TypeScript type:\n" +
+        `\`\`\`typescript\ntype Output = ${outputSchemaDescription}\n\`\`\`\n\n` +
+        "Return only the JSON object.",
+    },
+  ];
+}
+
+/**
+ * Build retry feedback after a failed parse/validation attempt.
+ */
+export function buildGenerateObjectRetryPrompt(
+  event: GenerateObjectRetryEvent
+): { role: "user"; content: string } {
+  const issues = event.validationIssues?.length
+    ? `\nValidation issues:\n- ${event.validationIssues.join("\n- ")}`
+    : "";
+
+  return {
+    role: "user",
+    content:
+      `Previous attempt ${event.attempt} failed (${event.errorType}): ${event.errorMessage}.${issues}\n\n` +
+      "Please try again and return only one corrected JSON object with no surrounding text.",
+  };
 }

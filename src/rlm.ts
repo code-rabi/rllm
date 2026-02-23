@@ -9,8 +9,26 @@ import { LLMClient, type LLMClientOptions } from "./llm-client.js";
 import { Sandbox, type SandboxResult } from "./sandbox.js";
 import { findCodeBlocks, formatIteration, formatExecutionResult } from "./parsing.js";
 import type { FinalAnswer } from "./sandbox.js";
-import { RLM_SYSTEM_PROMPT, buildSystemPrompt, buildUserPrompt, zodSchemaToTypeDescription } from "./prompts.js";
-import type { ChatMessage, TokenUsage, RLMResult, RLMTraceEntry, RLMEventCallback, RLMEvent } from "./types.js";
+import {
+  RLM_SYSTEM_PROMPT,
+  buildSystemPrompt,
+  buildUserPrompt,
+  zodSchemaToTypeDescription,
+  buildGenerateObjectMessages,
+  buildGenerateObjectRetryPrompt,
+} from "./prompts.js";
+import type {
+  ChatMessage,
+  TokenUsage,
+  RLMResult,
+  RLMTraceEntry,
+  RLMEventCallback,
+  RLMEvent,
+  GenerateObjectOptions,
+  GenerateObjectResult,
+  GenerateObjectRetryEvent,
+  GenerateObjectSchemas,
+} from "./types.js";
 
 // ============================================================================
 // Configuration
@@ -300,6 +318,162 @@ export class RLLM {
       iterations: iterations + 1,
       trace,
     };
+  }
+
+  /**
+   * Generate structured output that must satisfy the provided Zod schema.
+   * Retries with validation feedback until a valid object is produced.
+   */
+  async generateObject<TOutput, TInput = unknown>(
+    prompt: string,
+    schemas: GenerateObjectSchemas<TInput, TOutput>,
+    options?: GenerateObjectOptions
+  ): Promise<GenerateObjectResult<TOutput>>;
+  async generateObject<TOutput, TInput = unknown>(
+    prompt: string,
+    schemas: GenerateObjectSchemas<TInput, TOutput>,
+    options: GenerateObjectOptions = {}
+  ): Promise<GenerateObjectResult<TOutput>> {
+    const startTime = Date.now();
+    const maxRetries = options.maxRetries ?? 2;
+
+    if (maxRetries < 0 || !Number.isInteger(maxRetries)) {
+      throw new Error("generateObject: maxRetries must be a non-negative integer");
+    }
+
+    if (schemas.inputSchema && schemas.input !== undefined) {
+      const inputValidation = schemas.inputSchema.safeParse(schemas.input);
+      if (!inputValidation.success) {
+        const issues = inputValidation.error.issues
+          .map((issue) => {
+            const path = issue.path.length > 0 ? issue.path.join(".") : "<root>";
+            return `${path}: ${issue.message}`;
+          })
+          .join("; ");
+        throw new Error(`generateObject: input failed inputSchema validation - ${issues}`);
+      }
+    }
+
+    if (!schemas.outputSchema) {
+      throw new Error("generateObject: outputSchema is required");
+    }
+
+    const messages = buildGenerateObjectMessages(
+      prompt,
+      schemas.outputSchema,
+      schemas.input,
+      schemas.inputSchema
+    ) as ChatMessage[];
+    const totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
+    let attempts = 0;
+    let lastResponse = "";
+    let lastError: GenerateObjectRetryEvent | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      attempts = attempt;
+
+      const llmResult = await this.client.complete({
+        messages,
+        temperature: options.temperature,
+        maxTokens: options.maxTokens,
+      });
+
+      totalUsage.promptTokens += llmResult.usage.promptTokens;
+      totalUsage.completionTokens += llmResult.usage.completionTokens;
+      totalUsage.totalTokens += llmResult.usage.totalTokens;
+
+      lastResponse = llmResult.message.content;
+
+      const parseResult = this.parseJSONObject(lastResponse);
+      if (!parseResult.success) {
+        lastError = {
+          attempt,
+          maxRetries,
+          rawResponse: lastResponse,
+          errorType: "json_parse",
+          errorMessage: parseResult.error,
+        };
+
+        if (attempt <= maxRetries) {
+          options.onRetry?.(lastError);
+          messages.push({ role: "assistant", content: lastResponse });
+          messages.push(buildGenerateObjectRetryPrompt(lastError));
+          continue;
+        }
+
+        throw new Error(this.buildGenerateObjectErrorMessage(lastError));
+      }
+
+      const validated = schemas.outputSchema.safeParse(parseResult.value);
+      if (validated.success) {
+        return {
+          object: validated.data,
+          attempts,
+          rawResponse: lastResponse,
+          usage: {
+            totalCalls: attempts,
+            tokenUsage: totalUsage,
+            executionTimeMs: Date.now() - startTime,
+          },
+        };
+      }
+
+      const issues = validated.error.issues.map((issue) => {
+        const path = issue.path.length > 0 ? issue.path.join(".") : "<root>";
+        return `${path}: ${issue.message}`;
+      });
+
+      lastError = {
+        attempt,
+        maxRetries,
+        rawResponse: lastResponse,
+        errorType: "schema_validation",
+        errorMessage: "Response did not match schema",
+        validationIssues: issues,
+      };
+
+      if (attempt <= maxRetries) {
+        options.onRetry?.(lastError);
+        messages.push({ role: "assistant", content: lastResponse });
+        messages.push(buildGenerateObjectRetryPrompt(lastError));
+        continue;
+      }
+
+      throw new Error(this.buildGenerateObjectErrorMessage(lastError));
+    }
+
+    throw new Error("generateObject: reached an unexpected end state");
+  }
+
+  private parseJSONObject(text: string): { success: true; value: unknown } | { success: false; error: string } {
+    const raw = text.trim();
+    const fencedMatch = raw.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    const candidate = fencedMatch ? fencedMatch[1]! : raw;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(candidate);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: `Invalid JSON: ${message}` };
+    }
+
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return { success: false, error: "JSON root must be an object" };
+    }
+
+    return { success: true, value: parsed };
+  }
+
+  private buildGenerateObjectErrorMessage(event: GenerateObjectRetryEvent): string {
+    const issues = event.validationIssues?.length
+      ? `\nValidation issues:\n- ${event.validationIssues.join("\n- ")}`
+      : "";
+    return (
+      `generateObject failed after ${event.attempt} attempt(s): ${event.errorType} - ${event.errorMessage}.` +
+      `${issues}\nLast response:\n${event.rawResponse}`
+    );
   }
 
   private addUsage(a: TokenUsage, b: TokenUsage): TokenUsage {

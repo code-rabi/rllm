@@ -124,6 +124,70 @@ export interface RLMEvent {
 export type RLMEventCallback = (event: RLMEvent) => void;
 
 // ============================================================================
+// Structured Output Types
+// ============================================================================
+
+export type GenerateObjectErrorType = "json_parse" | "schema_validation";
+
+export interface GenerateObjectRetryEvent {
+  attempt: number;
+  maxRetries: number;
+  rawResponse: string;
+  errorType: GenerateObjectErrorType;
+  errorMessage: string;
+  validationIssues?: string[];
+}
+
+export interface GenerateObjectOptions {
+  /**
+   * Number of retries after the first attempt (default: 2).
+   * Total attempts = maxRetries + 1.
+   */
+  maxRetries?: number;
+  /**
+   * Optional temperature for object generation requests.
+   */
+  temperature?: number;
+  /**
+   * Optional max tokens for object generation requests.
+   */
+  maxTokens?: number;
+  /**
+   * Callback fired whenever an attempt fails and a retry is scheduled.
+   */
+  onRetry?: (event: GenerateObjectRetryEvent) => void;
+}
+
+export interface GenerateObjectSchemas<TInput = unknown, TOutput = unknown> {
+  /**
+   * Optional structured input data available to generation.
+   */
+  input?: TInput;
+  /**
+   * Optional schema describing the input structure.
+   * If input is provided, this schema is used for pre-validation.
+   */
+  inputSchema?: ZodType<TInput>;
+  /**
+   * Required schema for output validation.
+   */
+  outputSchema: ZodType<TOutput>;
+}
+
+export interface GenerateObjectUsage {
+  totalCalls: number;
+  tokenUsage: TokenUsage;
+  executionTimeMs: number;
+}
+
+export interface GenerateObjectResult<T> {
+  object: T;
+  usage: GenerateObjectUsage;
+  attempts: number;
+  rawResponse: string;
+}
+
+// ============================================================================
 // Chunking Types
 // ============================================================================
 

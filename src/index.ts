@@ -57,4 +57,10 @@ export type {
   RLMEventType,
   RLMEvent,
   RLMEventCallback,
+  GenerateObjectErrorType,
+  GenerateObjectRetryEvent,
+  GenerateObjectOptions,
+  GenerateObjectSchemas,
+  GenerateObjectUsage,
+  GenerateObjectResult,
 } from "./types.js";

@@ -82,6 +82,53 @@ const result = await rlm.completion(
 
 The LLM will know it can access `context.users`, `context.settings`, etc. with full type awareness.
 
+### Structured Output with Zod (`generateObject`)
+
+If you want schema-validated JSON output directly (without REPL/code execution), use `generateObject`.
+RLLM will retry when output is invalid JSON or fails Zod validation.
+
+```typescript
+import { z } from 'zod';
+import { createRLLM } from 'rllm';
+
+const rlm = createRLLM({ model: 'gpt-4o-mini' });
+
+const OutputSchema = z.object({
+  summary: z.string(),
+  keyPoints: z.array(z.string()),
+  confidence: z.number().min(0).max(1),
+});
+const InputSchema = z.object({
+  reportText: z.string(),
+  locale: z.string(),
+});
+
+const result = await rlm.generateObject(
+  "Summarize this report and provide key points with confidence",
+  {
+    input: {
+      reportText: hugeDocument,
+      locale: "en-US",
+    },
+    inputSchema: InputSchema,
+    outputSchema: OutputSchema,
+  },
+  {
+    maxRetries: 2, // total attempts = 3
+    onRetry: (event) => {
+      console.log(`Retry ${event.attempt}/${event.maxRetries + 1}: ${event.errorType}`);
+    },
+  }
+);
+
+console.log(result.object.summary);
+console.log(result.attempts, result.usage.tokenUsage.totalTokens);
+```
+
+`generateObject` differs from `completion()`:
+- `generateObject` asks for one JSON object and validates it against your schema.
+- `completion()` runs the full recursive REPL workflow where the model writes and executes JS code.
+
 The LLM will write code like:
 ```javascript
 // LLM-generated code runs in V8 isolate
@@ -153,6 +200,7 @@ Defaults:
 | Method | Description |
 |--------|-------------|
 | `rlm.completion(prompt, options)` | Full RLM completion with code execution |
+| `rlm.generateObject(prompt, { input?, inputSchema?, outputSchema }, options?)` | Structured output with Zod validation + retries |
 | `rlm.chat(messages)` | Direct LLM chat |
 | `rlm.getClient()` | Get underlying LLM client |
 
@@ -163,6 +211,23 @@ Defaults:
 |--------|------|-------------|
 | `context` | `string \| T` | The context data available to LLM-generated code |
 | `contextSchema` | `ZodType<T>` | Optional Zod schema describing context structure |
+
+### `GenerateObjectOptions`
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `maxRetries` | `number` | Retries after first attempt (default `2`) |
+| `temperature` | `number` | Optional generation temperature |
+| `maxTokens` | `number` | Optional max completion tokens |
+| `onRetry` | `(event) => void` | Called when parse/validation fails and a retry is scheduled |
+
+### `GenerateObject` schema config
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `input` | `TInput` | Optional structured input value |
+| `inputSchema` | `ZodType<TInput>` | Optional input schema used for pre-validation + prompt typing |
+| `outputSchema` | `ZodType<TOutput>` | Required output schema used for retry validation |
 
 ### Sandbox Bindings
 
